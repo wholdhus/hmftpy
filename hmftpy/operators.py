@@ -1,20 +1,19 @@
 from quspin.operators import quantum_operator
 
+
 def inner_hamiltonian(plaquette, interactions, basis):
     bonds = []
-    for c_op in interactions['local']:
-        coupling = interactions['local'][c_op]
-        bonds += [[c_op, [[coupling, i] for i in range(plaquette['L'])]]]
+    neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
+    if 'local' in interactions:
+        for c_op in interactions['local']:
+            coupling = interactions['local'][c_op]
+            bonds += [[c_op, [[coupling, i] for i in range(plaquette['L'])]]]
     for i in range(plaquette['L']):
-        for c_op in interactions['n']:
-            coupling = interactions['n'][c_op]
-            bonds+= [[c_op, [[coupling, i, ni] for ni in plaquette['inner_n'][i]]]]
-        for c_op in interactions['nn']:
-            coupling = interactions['nn'][c_op]
-            bonds+= [[c_op, [[coupling, i, nni] for nni in plaquette['inner_nn'][i]]]]
-        for c_op in interactions['nnn']:
-            coupling = interactions['nnn'][c_op]
-            bonds+= [[c_op, [[coupling, i, nnni] for nnni in plaquette['inner_nnn'][i]]]]
+        for n in neighbors:
+            if n in interactions:
+                for c_op in interactions[n]:
+                    coupling = interactions[n][c_op]
+                    bonds += [[c_op, [[coupling, i, ni] for ni in plaquette['inner'][n][i]]]]
     Hi = quantum_operator({'static': bonds}, basis=basis,
                           check_herm=False, check_symm=False,
                           dtype=TYPE)
@@ -23,6 +22,7 @@ def inner_hamiltonian(plaquette, interactions, basis):
 
 def periodic_hamiltonian(plaquette, interactions, basis):
     bonds = []
+    if 'local' in interactions:
     for c_op in interactions['local']:
         coupling = interactions['local'][c_op]
         bonds += [[c_op, [[coupling, i] for i in range(plaquette['L'])]]]

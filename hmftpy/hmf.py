@@ -1,7 +1,7 @@
 import numpy as np
 from quspin.basis import spin_basis_1d, tensor_basis
 from quspin.operators import hamiltonian, quantum_operator, quantum_LinearOperator
-from operators import inner_hamiltonian, outer_hamiltonian, mf_ops
+from .operators import inner_hamiltonian, outer_hamiltonian, mf_ops
 
 VERBOSE = False
 TYPE = np.complex128

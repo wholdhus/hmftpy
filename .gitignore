@@ -1,0 +1,4 @@
+.ipynb*
+/hmftpy/__pychache__/
+/hmftpy/plaquettes/__pychache__/
+*.swp
