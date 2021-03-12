@@ -1,5 +1,6 @@
 from quspin.operators import quantum_operator
 
+
 def inner_hamiltonian(plaquette, interactions, basis):
     bonds = []
     for c_op in interactions['local']:
@@ -66,20 +67,19 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis):
     return Ho
 
 
-
-def neel_op(L, basis): # Neel OP operator in the z direction
-    op_lst = [['z', [[(-1)**i, i] for i in range(L)]]]
-    return quantum_operater({'static': op_lst}, basis=basis)
-
-
-def bond_chiral_z(L, basis):
-    pinds = []
-    minds = []
-    for i in range(L):
-        pinds += [[1, i, j] for j in range(L)]
-        minds += [[-1, i, j] for j in range(L)]
-    op_lst = [['xy', pinds], ['yx', minds]]
-    return quantum_operator({'static': op_lst}, basis=basis)
+def mf_ops(plaquette, basis):
+    ops = [{} for i in range(plaquette['L'])]
+    for i in range(plaquette['L']):
+        ops[i]['x'] = quantum_operator({'static': [['x', [[1.0, i]]]]},
+                                           basis=basis, check_herm=False,
+                                           check_symm=False, dtype=TYPE)
+        ops[i]['y'] = quantum_operator({'static': [['y', [[1.0, i]]]]},
+                                           basis=basis, check_herm=False,
+                                           check_symm=False, dtype=TYPE)
+        ops[i]['z']= quantum_operator({'static': [['z', [[1.0, i]]]]},
+                                          basis=basis, check_herm=False,
+                                          check_symm=False, dtype=TYPE)
+    return ops
 
 
 def mf_ops(plaquette, basis):
@@ -94,4 +94,46 @@ def mf_ops(plaquette, basis):
         ops[i]['z']= quantum_operator({'static': [['z', [[1.0, i]]]]},
                                           basis=basis, check_herm=False,
                                           check_symm=False, dtype=TYPE)
+    return ops
+
+
+
+def n_nearest_magnetization(sublattices, basis, dir=(1,0,0)):
+    ops = []
+    for subl in sublattices:
+        op_lst = [['x', [[dir[0], i] for i in subl]],
+                  ['y', [[dir[1], i] for i in subl]],
+                  ['z', [[dir[2], i] for i in subl]]]
+        ops += [quantum_LinearOperator(op_lst, basis=basis)]
+    return ops
+
+def n_n_nearest_magnetization(sublattices, basis, dir=(1,0,0)):
+    ops = []
+    for subl in sublattices:
+        op_lst = [['x', [[dir[0], i] for i in subl]],
+                  ['y', [[dir[1], i] for i in subl]],
+                  ['z', [[dir[2], i] for i in subl]]]
+        ops += [quantum_LinearOperator(op_lst, basis=basis)]
+    return ops
+
+
+def stripe_magnetization(stripes, basis, dir=(1,0,0)):
+    ops = []
+    for st in stripes:
+        op_lst = [['x', [[dir[0], i] for i in st]],
+                  ['y', [[dir[1], i] for i in st]],
+                  ['z', [[dir[2], i] for i in st]]]
+        ops += [quantum_LinearOperator(op_lst, basis=basis)]
+    return ops
+
+
+def helicity(triangles, basis):
+    # specific to 12 site for now
+    # doing z projection for now
+    ops = []
+    for tr in triangles:
+        op_lst = [['xy', [[1, tr[0], tr[1]], [-1, tr[1], tr[0]], # s0 x s1
+                          [1, tr[1], tr[2]], [-1, tr[2], tr[1]], # s1 x s2,
+                          [1, tr[2], tr[0]], [-1, tr[0], tr[2]]]]] # s2 x s3
+        ops += [quantum_LinearOperator(op_lst, basis=basis)]
     return ops

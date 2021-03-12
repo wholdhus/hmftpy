@@ -1,14 +1,10 @@
 import numpy as np
 from quspin.basis import spin_basis_1d, tensor_basis
-from kithcmb import kitaevhoneycomb
-from operators import inner_hamiltonian, periodic_hamiltonian, outer_hamiltonian
+from quspin.operators import hamiltonian, quantum_operator, quantum_LinearOperator
+from operators import inner_hamiltonian, outer_hamiltonian, mf_ops
 
 VERBOSE = False
-MAXIT = None
-TOL = 10**-14
-HTOL = 10**-11
 TYPE = np.complex128
-
 
 def log(msg):
     """
@@ -16,7 +12,6 @@ def log(msg):
     """
     if VERBOSE:
         print(msg)
-
 
 def get_mfs(v, mf_ops):
     L = len(mf_ops)
@@ -32,7 +27,8 @@ def get_mfs(v, mf_ops):
 
 
 def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None, full_diag=False, n_states=1, double_ext=False,
-            avoid_zero=False, Hi=None, ops=None):
+            avoid_zero=False, Hi=None, ops=None, lanczos_tol=10**-15, hmft_tol=10**-13,
+            v0_start=False):
     L = plaquette['L']
     if Hi is None:
         Hi = inner_hamiltonian(plaquette, interactions, basis)
@@ -49,7 +45,7 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None, full_diag=Fa
     if full_diag:
         e, v = H.eigh()
     else:
-        e, v = H.eigsh(k=n_states, which='SA', maxiter=MAXIT, tol=TOL)
+        e, v = H.eigsh(k=n_states, which='SA', tol=lanczos_tol)
     log('Ground state energy with initial seed')
     log(e[0])
 
@@ -58,6 +54,7 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None, full_diag=Fa
     mf = get_mfs(vs[0], ops)
     iter = 0
     converged = False
+    v0 = None
     while iter < max_iter and not converged:
         iter += 1
         log('{}th iteration'.format(iter))
@@ -67,19 +64,21 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None, full_diag=Fa
 
         if full_diag:
             e, v = H.eigh()
-            es_degen = e[np.abs(e - e[0]) < TOL]
+            es_degen = e[np.abs(e - e[0]) < 5*lanczos_tol]
             log('Ground state degeneracy: {}'.format(len(es_degen)))
         else:
-            e, v = H.eigsh(k=n_states, which = 'SA') # just finding lowest energies
+            e, v = H.eigsh(k=n_states, which = 'SA', tol=lanczos_tol, v0=v0) # just finding lowest energies
+        if v0_start:
+            v0 = v[:,0]
         log('Energy: {}'.format(e[0]))
         mf = get_mfs(v[:,0], ops)
         energies += [e[0]]
         vs += [v[:, 0]]
         cvg = np.abs(energies[iter] - energies[iter - 1])
-        if cvg < HTOL:
+        if cvg < hmft_tol:
             converged = True
         if avoid_zero:
-            if np.mean(np.abs(mf['x'])) < HTOL or np.mean(np.abs(mf['y'])) < HTOL or np.mean(np.abs(mf['z'])) < HTOL:
+            if np.mean(np.abs(mf['x'])) < hmft_tol or np.mean(np.abs(mf['y'])) < hmft_tol or np.mean(np.abs(mf['z'])) < hmft_tol:
                 print('Zero mean-field! Restarting with random seed!')
                 mf = {'x': TYPE(2*(np.random.rand(L) - 0.5)),
                        'y': TYPE(2*(np.random.rand(L) - 0.5)),
@@ -90,15 +89,11 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None, full_diag=Fa
         if full_diag:
             e, v = H2.eigh()
         else:
-            e, v = H2.eigsh(k=1, which='SA')
+            e, v = H2.eigsh(k=1, which='SA', tol=lanczos_tol)
             e0 = e[0]
     else:
-        # ep = Hi.matrix_ele(vs[-1], vs[-1])
-        # e0 = 0.5*(ep + energies[-1]) # (2 H_i + H_o)/2
         e0 = energies[-1]
     return np.real(e0), vs[-1], mf, converged
-
-
 
 
 
