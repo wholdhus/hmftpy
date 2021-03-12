@@ -26,9 +26,9 @@ def get_mfs(v, mf_ops):
     return mfs
 
 
-def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None, full_diag=False, n_states=1, double_ext=False,
-            avoid_zero=False, Hi=None, ops=None, lanczos_tol=10**-15, hmft_tol=10**-13,
-            v0_start=False):
+def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
+            Hi=None, ops=None, lanczos_tol=10**-15, hmft_tol=10**-13,
+            v0_start=False, full_diag=False):
     L = plaquette['L']
     if Hi is None:
         Hi = inner_hamiltonian(plaquette, interactions, basis)
@@ -39,8 +39,6 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None, full_diag=Fa
                'y': TYPE(2*(np.random.rand(L) - 0.5)),
                'z': TYPE(2*(np.random.rand(L) - 0.5))}
     H = Hi + outer_hamiltonian(plaquette, mf0, interactions, basis)
-    if double_ext:
-        H += outer_hamiltonian(plaquette, mf0, interactions, basis)
     log('Hamiltonian complete!')
     if full_diag:
         e, v = H.eigh()
@@ -59,9 +57,6 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None, full_diag=Fa
         iter += 1
         log('{}th iteration'.format(iter))
         H = Hi + outer_hamiltonian(plaquette, mf, interactions, basis)
-        if double_ext:
-            H += outer_hamiltonian(plaquette, mf, interactions, basis)
-
         if full_diag:
             e, v = H.eigh()
             es_degen = e[np.abs(e - e[0]) < 5*lanczos_tol]
@@ -77,26 +72,8 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None, full_diag=Fa
         cvg = np.abs(energies[iter] - energies[iter - 1])
         if cvg < hmft_tol:
             converged = True
-        if avoid_zero:
-            if np.mean(np.abs(mf['x'])) < hmft_tol or np.mean(np.abs(mf['y'])) < hmft_tol or np.mean(np.abs(mf['z'])) < hmft_tol:
-                print('Zero mean-field! Restarting with random seed!')
-                mf = {'x': TYPE(2*(np.random.rand(L) - 0.5)),
-                       'y': TYPE(2*(np.random.rand(L) - 0.5)),
-                       'z': TYPE(2*(np.random.rand(L) - 0.5))}
-                converged = False
-    if double_ext:
-        H2 = Hi + outer_hamiltonian(plaquette, mf, interactions, basis)
-        if full_diag:
-            e, v = H2.eigh()
-        else:
-            e, v = H2.eigsh(k=1, which='SA', tol=lanczos_tol)
-            e0 = e[0]
-    else:
-        e0 = energies[-1]
+    e0 = energies[-1]
     return np.real(e0), vs[-1], mf, converged
-
-
-
 
 if __name__ == '__main__':
     from plaquettes.triangular import plaq12, plaq12_hex, plaq7

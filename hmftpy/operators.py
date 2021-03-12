@@ -1,6 +1,5 @@
 from quspin.operators import quantum_operator
 
-
 def inner_hamiltonian(plaquette, interactions, basis):
     bonds = []
     for c_op in interactions['local']:
@@ -65,21 +64,6 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis):
     Ho = quantum_operator({'static': bonds}, basis=basis, check_herm=False,
                           check_symm=False, dtype=TYPE)
     return Ho
-
-
-def mf_ops(plaquette, basis):
-    ops = [{} for i in range(plaquette['L'])]
-    for i in range(plaquette['L']):
-        ops[i]['x'] = quantum_operator({'static': [['x', [[1.0, i]]]]},
-                                           basis=basis, check_herm=False,
-                                           check_symm=False, dtype=TYPE)
-        ops[i]['y'] = quantum_operator({'static': [['y', [[1.0, i]]]]},
-                                           basis=basis, check_herm=False,
-                                           check_symm=False, dtype=TYPE)
-        ops[i]['z']= quantum_operator({'static': [['z', [[1.0, i]]]]},
-                                          basis=basis, check_herm=False,
-                                          check_symm=False, dtype=TYPE)
-    return ops
 
 
 def mf_ops(plaquette, basis):
