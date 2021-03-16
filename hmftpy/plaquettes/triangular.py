@@ -174,7 +174,9 @@ Connection diagram for 12 site truncated triangle
 
 
 """
-plaq12 = {'L': 12}
+plaq12 = {'L': 12,
+          'inner': {},
+          'outer': {}}
 plaq12['inner']['nearest'] = [
             [1,3,4],
             [0,2,4,5],
@@ -289,7 +291,9 @@ Connection diagram for 12 zigzag
 
 
 """
-plaq12z = {'L': 12}
+plaq12z = {'L': 12,
+           'inner': {},
+           'outer': {}}
 plaq12z['inner']['nearest'] = [
             [1,3,4], # 0
             [0,2,4,5],
@@ -370,7 +374,9 @@ Connection diagram for 21 site
             0 - 1 - 2
 
 """
-plaq21 = {'L': 21}
+plaq21 = {'L': 21,
+          'inner': {},
+          'outer': {}}
 plaq21['inner']['nearest'] = [
             [1,3,4], # 0
             [2,5,4,0], # 1

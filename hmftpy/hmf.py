@@ -1,7 +1,7 @@
 import numpy as np
 from quspin.basis import spin_basis_1d, tensor_basis
 from quspin.operators import hamiltonian, quantum_operator, quantum_LinearOperator
-from .operators import inner_hamiltonian, outer_hamiltonian, mf_ops
+from operators import inner_hamiltonian, outer_hamiltonian, mf_ops
 
 VERBOSE = False
 TYPE = np.complex128
@@ -76,21 +76,12 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
     return np.real(e0), vs[-1], mf, converged
 
 if __name__ == '__main__':
-    from plaquettes.triangular import plaq12, plaq12_hex, plaq7
+    from plaquettes.triangular import plaq12
     basis = spin_basis_1d(12, pauli=0)
     ops = mf_ops(plaq12, basis)
     interactions = {'local': {},
-                    'n': {'xx': 1, 'yy': 1, 'zz': 1},
-                    'nn': {'xx': .1, 'yy': .1, 'zz': .1},
-                    'nnn': {}
-                    }
+                    'nearest': {'xx': 1, 'yy': 1}}
     print('12 site')
-    print('HMFT')
-    e, v, mf, cvg = do_hmft(plaq12, interactions, basis, mf0=None)
-    print('Energy density:')
-    print(e/24)
-    print('Converged?')
-    print(cvg)
     Hi = inner_hamiltonian(plaq12, interactions, basis)
     e, v = Hi.eigsh(k=1, which='SA')
     print('ED energy with open b.c.')
@@ -99,21 +90,9 @@ if __name__ == '__main__':
     e, v = Hp.eigsh(k=1, which='SA')
     print('ED energy with periodic b.c.')
     print(e[0]/24)
-
-    print('')
-    b7 = spin_basis_1d(7, pauli=0)
-    print('7 site')
-    print('Running HMFT')
-    e, v, mf, cvg = do_hmft(plaq7, interactions, b7, mf0=None)
+    print('HMFT')
+    e, v, mf, cvg = do_hmft(plaq12, interactions, basis, mf0=None)
     print('Energy density:')
-    print(e/14)
+    print(e/24)
     print('Converged?')
     print(cvg)
-    Hp = periodic_hamiltonian(plaq7, interactions, b7)
-    e, v = Hp.eigsh(k=1, which='SA')
-    print('ED energy with periodic b.c.')
-    print(e[0]/14)
-    Hi = inner_hamiltonian(plaq7, interactions, b7)
-    e, v = Hi.eigsh(k=1, which='SA')
-    print('ED energy with open b.c.')
-    print(e[0]/14)

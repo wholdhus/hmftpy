@@ -1,5 +1,7 @@
 from quspin.operators import quantum_operator
+import numpy as np
 
+TYPE = np.complex128
 
 def inner_hamiltonian(plaquette, interactions, basis):
     bonds = []
@@ -22,7 +24,6 @@ def inner_hamiltonian(plaquette, interactions, basis):
 
 def periodic_hamiltonian(plaquette, interactions, basis):
     bonds = []
-    if 'local' in interactions:
     for c_op in interactions['local']:
         coupling = interactions['local'][c_op]
         bonds += [[c_op, [[coupling, i] for i in range(plaquette['L'])]]]
