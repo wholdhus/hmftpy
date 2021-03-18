@@ -1,10 +1,11 @@
 import numpy as np
 from quspin.basis import spin_basis_1d, tensor_basis
 from quspin.operators import hamiltonian, quantum_operator, quantum_LinearOperator
-from operators import inner_hamiltonian, outer_hamiltonian, mf_ops
+from .operators import inner_hamiltonian, outer_hamiltonian, mf_ops
 
 VERBOSE = False
 TYPE = np.complex128
+
 
 def log(msg):
     """
@@ -28,7 +29,7 @@ def get_mfs(v, mf_ops):
 
 def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
             Hi=None, ops=None, lanczos_tol=10**-15, hmft_tol=10**-13,
-            v0_start=False, full_diag=False):
+            v0_start=False, n_states=1):
     L = plaquette['L']
     if Hi is None:
         Hi = inner_hamiltonian(plaquette, interactions, basis)
@@ -40,7 +41,7 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
                'z': TYPE(2*(np.random.rand(L) - 0.5))}
     H = Hi + outer_hamiltonian(plaquette, mf0, interactions, basis)
     log('Hamiltonian complete!')
-    if full_diag:
+    if n_states < 0:
         e, v = H.eigh()
     else:
         e, v = H.eigsh(k=n_states, which='SA', tol=lanczos_tol)
@@ -57,7 +58,7 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
         iter += 1
         log('{}th iteration'.format(iter))
         H = Hi + outer_hamiltonian(plaquette, mf, interactions, basis)
-        if full_diag:
+        if n_states < 0:
             e, v = H.eigh()
             es_degen = e[np.abs(e - e[0]) < 5*lanczos_tol]
             log('Ground state degeneracy: {}'.format(len(es_degen)))
@@ -74,25 +75,3 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
             converged = True
     e0 = energies[-1]
     return np.real(e0), vs[-1], mf, converged
-
-if __name__ == '__main__':
-    from plaquettes.triangular import plaq12
-    basis = spin_basis_1d(12, pauli=0)
-    ops = mf_ops(plaq12, basis)
-    interactions = {'local': {},
-                    'nearest': {'xx': 1, 'yy': 1}}
-    print('12 site')
-    Hi = inner_hamiltonian(plaq12, interactions, basis)
-    e, v = Hi.eigsh(k=1, which='SA')
-    print('ED energy with open b.c.')
-    print(e[0]/24)
-    Hp = periodic_hamiltonian(plaq12, interactions, basis)
-    e, v = Hp.eigsh(k=1, which='SA')
-    print('ED energy with periodic b.c.')
-    print(e[0]/24)
-    print('HMFT')
-    e, v, mf, cvg = do_hmft(plaq12, interactions, basis, mf0=None)
-    print('Energy density:')
-    print(e/24)
-    print('Converged?')
-    print(cvg)

@@ -3,17 +3,30 @@ import numpy as np
 
 TYPE = np.complex128
 
-def inner_hamiltonian(plaquette, interactions, basis):
+def inner_hamiltonian(plaquette, interactions, basis, verbose=False):
+    """
+    Constructs a QuSpin quantum_operator corresponding to the inner-cluster
+        Hamiltonian (i.e. the cluster Hamiltonian with OBC)
+    Input:
+        plaquette (dict): Contains lists of neighbors, from files in the plaquettes folder
+        interactions (dict): dict of interactions (see example in README.md)
+        basis (QuSpin spin_basis_1d object): basis to construct the Hamiltonian in
+    Output:
+        Hi: QuSpin quantum_operator
+    """
     bonds = []
     neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
-    if 'local' in interactions:
-        for c_op in interactions['local']:
-            coupling = interactions['local'][c_op]
-            bonds += [[c_op, [[coupling, i] for i in range(plaquette['L'])]]]
-    for i in range(plaquette['L']):
-        for n in neighbors:
-            if n in interactions:
-                for c_op in interactions[n]:
+    for n in interactions:
+        if n == 'local':
+            for c_op in interactions[n]:
+                coupling = interactions[n][c_op]
+                bonds += [[c_op, [[coupling, i] for i in range(plaquette['L'])]]]
+        else:
+            for c_op in interactions[n]:
+                if verbose:
+                    print('Interaction:')
+                    print('{}: {}.{}'.format(n, interactions[n][c_op], c_op))
+                for i in range(plaquette['L']):
                     coupling = interactions[n][c_op]
                     bonds += [[c_op, [[coupling, i, ni] for ni in plaquette['inner'][n][i]]]]
     Hi = quantum_operator({'static': bonds}, basis=basis,
@@ -22,52 +35,77 @@ def inner_hamiltonian(plaquette, interactions, basis):
     return Hi
 
 
-def periodic_hamiltonian(plaquette, interactions, basis):
+def periodic_hamiltonian(plaquette, interactions, basis, verbose=False):
+    """
+    Constructs a QuSpin quantum_operator corresponding to the cluster
+        Hamiltonian with PBC
+    Input:
+        plaquette (dict): Contains lists of neighbors, from files in the plaquettes folder
+        interactions (dict): dict of interactions (see example in README.md)
+        basis (QuSpin spin_basis_1d object): basis to construct the Hamiltonian in
+    Output:
+        Hp: QuSpin quantum_operator
+    """
     bonds = []
-    for c_op in interactions['local']:
-        coupling = interactions['local'][c_op]
-        bonds += [[c_op, [[coupling, i] for i in range(plaquette['L'])]]]
-    for i in range(plaquette['L']):
-        for c_op in interactions['n']:
-            coupling = interactions['n'][c_op]
-            bonds+= [[c_op, [[coupling, i, ni] for ni in plaquette['inner_n'][i]]]]
-            bonds+= [[c_op, [[coupling, i, ni] for ni in plaquette['outer_n'][i]]]]
-        for c_op in interactions['nn']:
-            coupling = interactions['nn'][c_op]
-            bonds+= [[c_op, [[coupling, i, nni] for nni in plaquette['inner_nn'][i]]]]
-            bonds+= [[c_op, [[coupling, i, nni] for nni in plaquette['outer_nn'][i]]]]
-        for c_op in interactions['nnn']:
-            coupling = interactions['nnn'][c_op]
-            bonds+= [[c_op, [[coupling, i, nnni] for nnni in plaquette['inner_nnn'][i]]]]
-            bonds+= [[c_op, [[coupling, i, nnni] for nnni in plaquette['outer_nnn'][i]]]]
-
-    Hi = quantum_operator({'static': bonds}, basis=basis,
+    neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
+    for n in interactions:
+        if n == 'local':
+            for c_op in interactions[n]:
+                coupling = interactions[n][c_op]
+                bonds += [[c_op, [[coupling, i] for i in range(plaquette['L'])]]]
+        else:
+            for c_op in interactions[n]:
+                if verbose:
+                    print('Interaction:')
+                    print('{}: {}.{}'.format(n, interactions[n][c_op], c_op))
+                for i in range(plaquette['L']):
+                    coupling = interactions[n][c_op]
+                    bonds += [[c_op, [[coupling, i, ni] for ni in plaquette['inner'][n][i]]]]
+                    bonds += [[c_op, [[coupling, i, ni] for ni in plaquette['outer'][n][i]]]]
+    Hp = quantum_operator({'static': bonds}, basis=basis,
                           check_herm=False, check_symm=False,
                           dtype=TYPE)
-    return Hi
+    return Hp
 
 
-def outer_hamiltonian(plaquette, mean_fields, interactions, basis):
+def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False):
+    """
+    Constructs a QuSpin quantum_operator corresponding to the cluster-bath
+        Hamiltonian
+    Input:
+        plaquette (dict): Contains lists of neighbors, from files in the plaquettes folder
+        mean_fields (dict): dict of mean fields (see example in README.md)
+        interactions (dict): dict of interactions (see example in README.md)
+        basis (QuSpin spin_basis_1d object): basis to construct the Hamiltonian in
+    Output:
+        Ho: QuSpin quantum_operator
+    """
     bonds = []
-    for i in range(plaquette['L']):
-        for c_op in interactions['n']:
-            coupling = interactions['n'][c_op]
-            bonds += [[c_op[1], [[coupling*mean_fields[c_op[0]][ni], i] for ni in plaquette['outer_n'][i]]]]
-
-        for c_op in interactions['nn']:
-            coupling = interactions['nn'][c_op]
-            bonds += [[c_op[1], [[coupling*mean_fields[c_op[0]][nni], i] for nni in plaquette['outer_nn'][i]]]]
-
-        for c_op in interactions['nnn']:
-            coupling = interactions['nnn'][c_op]
-            bonds += [[c_op[1], [[coupling*mean_fields[c_op[0]][nnni], i] for nnni in plaquette['outer_nnn'][i]]]]
-
+    for n in interactions:
+        for c_op in interactions[n]:
+            if n != 'local':
+                if verbose:
+                    print('Interaction:')
+                    print('{}: {}.{}'.format(n, interactions[n][c_op], c_op))
+                for i in range(plaquette['L']):
+                    coupling = interactions[n][c_op]
+                    bonds += [[c_op[1], [[coupling*mean_fields[c_op[0]][ni], i] for ni in plaquette['outer'][n][i]]]]
     Ho = quantum_operator({'static': bonds}, basis=basis, check_herm=False,
                           check_symm=False, dtype=TYPE)
     return Ho
 
 
 def mf_ops(plaquette, basis):
+    """
+    Constructs a dict of QuSpin quantum operators for all components of spin on
+        each site of the cluster
+    Input:
+        plaquette (dict): Contains lists of neighbors, from files in the plaquettes folder
+        basis (QuSpin spin_basis_1d object): basis to construct the Hamiltonian in
+    Output:
+        ops (list): Format is [{'x': x_op, 'y': y_op, 'z': z_op}] with one
+            dict for each site in the cluster
+    """
     ops = [{} for i in range(plaquette['L'])]
     for i in range(plaquette['L']):
         ops[i]['x'] = quantum_operator({'static': [['x', [[1.0, i]]]]},
