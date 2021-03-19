@@ -38,6 +38,8 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False, disorder={}
     Hi = quantum_operator({'static': bonds}, basis=basis,
                           check_herm=False, check_symm=False,
                           dtype=TYPE)
+    if str(Hi) == '':
+        raise Exception('Null operator')
     return Hi
 
 
@@ -80,6 +82,8 @@ def periodic_hamiltonian(plaquette, interactions, basis, verbose=False, disorder
     Hp = quantum_operator({'static': bonds}, basis=basis,
                           check_herm=False, check_symm=False,
                           dtype=TYPE)
+    if str(Hp) == '':
+        raise Exception('Null operator')
     return Hp
 
 
@@ -110,6 +114,8 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False
                     bonds += [[c_op[1], [[coupling*mean_fields[c_op[0]][ni]*r[i,ni], i] for ni in plaquette['outer'][n][i]]]]
     Ho = quantum_operator({'static': bonds}, basis=basis, check_herm=False,
                           check_symm=False, dtype=TYPE)
+    if str(Ho) == '':
+        raise Exception('Null operator')
     return Ho
 
 
