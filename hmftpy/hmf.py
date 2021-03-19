@@ -27,9 +27,26 @@ def get_mfs(v, mf_ops):
     return mfs
 
 
+def get_useful_mf_inds(plaquette, interactions):
+    good_inds = {'x': [], 'y': [], 'z': []}
+    for n in interactions:
+        if n != 'local':
+            for c_op in interactions[n]:
+                for neighbors in plaquette['outer'][n]:
+                    for u in ['x', 'y', 'z']:
+                        if c_op[0] == u:
+                            good_inds[u] += neighbors
+                        if c_op[1] == u:
+                            good_inds[u] += neighbors
+    for u in ['x', 'y', 'z']:
+        good_inds[u]= list(set(good_inds[u]))
+    return good_inds
+
+
 def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
             Hi=None, ops=None, lanczos_tol=10**-15, hmft_tol=10**-13,
-            v0_start=False, n_states=1, disorder={}):
+            v0_start=False, n_states=1, disorder={},
+            mf_cvg=False):
     L = plaquette['L']
     if Hi is None:
         Hi = inner_hamiltonian(plaquette, interactions, basis, disorder=disorder)
@@ -54,6 +71,10 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
     iter = 0
     converged = False
     v0 = None
+
+    if mf_cvg:
+        mf_inds = get_useful_mf_inds(plaquette, interactions)
+
     while iter < max_iter and not converged:
         iter += 1
         log('{}th iteration'.format(iter))
@@ -70,7 +91,16 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
         mf = get_mfs(v[:,0], ops)
         energies += [e[0]]
         vs += [v[:, 0]]
-        cvg = np.abs(energies[iter] - energies[iter - 1])
+        if mf_cvg:
+            mf_r = [mf[u][mf_inds[u]] for u in ['x', 'y', 'z']]
+            cvg = 100
+            if iter > 1:
+                cvg = np.sum(np.linalg.norm(mf_r[i] - prev_mf_r[i]) for i in range(3))
+                log('Total distance from previous mean fields')
+                log(cvg)
+            prev_mf_r = mf_r
+        else: # basing convergence on energy
+            cvg = np.abs(energies[iter] - energies[iter-1])
         if cvg < hmft_tol:
             converged = True
     e0 = energies[-1]

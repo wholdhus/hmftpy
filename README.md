@@ -32,7 +32,7 @@ Functions in this package use the following formats for input and output diction
     interactions = {'local': {'z': -2},
                     'nearest': {'xx': 1, 'yy': 1},
                     'n_nearest': {'xy': 1, 'yx': -1}}
-                    'n_n_nearest': {'+-': -1, '-+', -1}}
+                    'n_n_nearest': {'yx': -1, 'yx', -1}}
 
     mean_fields = {'x': [List of <sigma_i^x> for i in cluster],
                    'y': [List of <sigma_i^y> for i in cluster],
