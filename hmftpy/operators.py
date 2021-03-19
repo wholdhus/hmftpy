@@ -3,7 +3,7 @@ import numpy as np
 
 TYPE = np.complex128
 
-def inner_hamiltonian(plaquette, interactions, basis, verbose=False):
+def inner_hamiltonian(plaquette, interactions, basis, verbose=False, disorder={}):
     """
     Constructs a QuSpin quantum_operator corresponding to the inner-cluster
         Hamiltonian (i.e. the cluster Hamiltonian with OBC)
@@ -11,31 +11,37 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False):
         plaquette (dict): Contains lists of neighbors, from files in the plaquettes folder
         interactions (dict): dict of interactions (see example in README.md)
         basis (QuSpin spin_basis_1d object): basis to construct the Hamiltonian in
+        disorder (list of #s): Factors to multiply each coupling for each site by.
     Output:
         Hi: QuSpin quantum_operator
     """
     bonds = []
-    neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
+    L = plaquette['L']
     for n in interactions:
         if n == 'local':
             for c_op in interactions[n]:
-                coupling = interactions[n][c_op]
-                bonds += [[c_op, [[coupling, i] for i in range(plaquette['L'])]]]
+                r = np.ones(L)
+                if n in disorder:
+                    if c_op in disorder[n]:
+                        r = disorder[n][c_op]
+                couplings = interactions[n][c_op]*r
+                bonds += [[c_op, [[couplings[i], i] for i in range(L)]]]
         else:
             for c_op in interactions[n]:
-                if verbose:
-                    print('Interaction:')
-                    print('{}: {}.{}'.format(n, interactions[n][c_op], c_op))
-                for i in range(plaquette['L']):
+                r = np.ones((L, L)) # resetting
+                if n in disorder:
+                    if c_op in disorder[n]:
+                        r = disorder[n][c_op]
+                for i in range(L):
                     coupling = interactions[n][c_op]
-                    bonds += [[c_op, [[coupling, i, ni] for ni in plaquette['inner'][n][i]]]]
+                    bonds += [[c_op, [[coupling*r[i, ni], i, ni] for ni in plaquette['inner'][n][i]]]]
     Hi = quantum_operator({'static': bonds}, basis=basis,
                           check_herm=False, check_symm=False,
                           dtype=TYPE)
     return Hi
 
 
-def periodic_hamiltonian(plaquette, interactions, basis, verbose=False):
+def periodic_hamiltonian(plaquette, interactions, basis, verbose=False, disorder={}):
     """
     Constructs a QuSpin quantum_operator corresponding to the cluster
         Hamiltonian with PBC
@@ -43,32 +49,41 @@ def periodic_hamiltonian(plaquette, interactions, basis, verbose=False):
         plaquette (dict): Contains lists of neighbors, from files in the plaquettes folder
         interactions (dict): dict of interactions (see example in README.md)
         basis (QuSpin spin_basis_1d object): basis to construct the Hamiltonian in
+        disorder (list of #s): Factors to multiply each coupling for each site by.
     Output:
         Hp: QuSpin quantum_operator
     """
+    di = 0
+    ld = len(disorder)
     bonds = []
     neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
+    L = plaquette['L']
     for n in interactions:
         if n == 'local':
             for c_op in interactions[n]:
-                coupling = interactions[n][c_op]
-                bonds += [[c_op, [[coupling, i] for i in range(plaquette['L'])]]]
+                r = np.ones(L)
+                if n in disorder:
+                    if c_op in disorder[n]:
+                        r = disorder[n][c_op]
+                couplings = interactions[n][c_op]*r
+                bonds += [[c_op, [[couplings[i], i] for i in range(L)]]]
         else:
             for c_op in interactions[n]:
-                if verbose:
-                    print('Interaction:')
-                    print('{}: {}.{}'.format(n, interactions[n][c_op], c_op))
-                for i in range(plaquette['L']):
+                r = np.ones((L, L)) # resetting
+                if n in disorder:
+                    if c_op in disorder[n]:
+                        r = disorder[n][c_op]
+                for i in range(L):
                     coupling = interactions[n][c_op]
-                    bonds += [[c_op, [[coupling, i, ni] for ni in plaquette['inner'][n][i]]]]
-                    bonds += [[c_op, [[coupling, i, ni] for ni in plaquette['outer'][n][i]]]]
+                    bonds += [[c_op, [[coupling*r[i,ni], i, ni] for ni in plaquette['inner'][n][i]]]]
+                    bonds += [[c_op, [[coupling*r[i,ni], i, ni] for ni in plaquette['outer'][n][i]]]]
     Hp = quantum_operator({'static': bonds}, basis=basis,
                           check_herm=False, check_symm=False,
                           dtype=TYPE)
     return Hp
 
 
-def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False):
+def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False, disorder={}):
     """
     Constructs a QuSpin quantum_operator corresponding to the cluster-bath
         Hamiltonian
@@ -77,19 +92,22 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False
         mean_fields (dict): dict of mean fields (see example in README.md)
         interactions (dict): dict of interactions (see example in README.md)
         basis (QuSpin spin_basis_1d object): basis to construct the Hamiltonian in
+        disorder (list of #s): Factors to multiply each coupling for each site by.
     Output:
         Ho: QuSpin quantum_operator
     """
+    L = plaquette['L']
     bonds = []
     for n in interactions:
         for c_op in interactions[n]:
             if n != 'local':
-                if verbose:
-                    print('Interaction:')
-                    print('{}: {}.{}'.format(n, interactions[n][c_op], c_op))
-                for i in range(plaquette['L']):
+                r = np.ones((L, L))
+                if n in disorder:
+                    if c_op in disorder[n]:
+                        r = disorder[n][c_op]
+                for i in range(L):
                     coupling = interactions[n][c_op]
-                    bonds += [[c_op[1], [[coupling*mean_fields[c_op[0]][ni], i] for ni in plaquette['outer'][n][i]]]]
+                    bonds += [[c_op[1], [[coupling*mean_fields[c_op[0]][ni]*r[i,ni], i] for ni in plaquette['outer'][n][i]]]]
     Ho = quantum_operator({'static': bonds}, basis=basis, check_herm=False,
                           check_symm=False, dtype=TYPE)
     return Ho
