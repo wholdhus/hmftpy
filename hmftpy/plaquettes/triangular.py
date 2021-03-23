@@ -24,6 +24,39 @@ def test_bonds(plaquette):
 
 
 """
+Connection diagram for 3 site
+    <0>-<1>-<2>
+    / \ / \ / \
+  <1>- 2 -<0>-<1>
+  / \ / \ / \ /
+<2>- 0 - 1 -<2>-
+  \ / \ / \ / \
+  <1>-<2>-<0>-<1>
+"""
+plaq3 = {'L': 3,
+         'inner': {},
+         'outer': {}}
+plaq3['inner']['nearest'] = [
+            [1,2], [0,2], [0,1]]
+plaq3['inner']['n_nearest'] = [
+            [], [], []]
+plaq3['inner']['n_n_nearest'] = [
+            [], [], []]
+plaq3['outer']['nearest'] = [
+            [1,1,2,2],
+            [0,0,2,2],
+            [0,0,1,1]]
+plaq3['outer']['n_nearest'] = [
+            [0 for i in range(6)],
+            [1 for i in range(6)],
+            [2 for i in range(6)]]
+plaq3['outer']['n_n_nearest'] = [
+            [1,1,1,2,2,2],
+            [0,0,0,2,2,2],
+            [0,0,0,1,1,1]]
+
+
+"""
 Connection diagram for 9 site 'pacman'
             <7>-<5>
             / \ / \
