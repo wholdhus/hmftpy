@@ -55,6 +55,12 @@ plaq3['outer']['n_n_nearest'] = [
             [0,0,0,2,2,2],
             [0,0,0,1,1,1]]
 
+plaq3['inner']['x_bonds'] = [[0,1]]
+plaq3['inner']['y_bonds'] = [[1,2]]
+plaq3['inner']['z_bonds'] = [[2,0]]
+plaq3['outer']['x_bonds'] = [[1,2], [2,0]]
+plaq3['outer']['y_bonds'] = [[0,1], [2,0]]
+plaq3['outer']['z_bonds'] = [[0,1], [1,2]]
 
 """
 Connection diagram for 9 site 'pacman'
@@ -74,6 +80,8 @@ Connection diagram for 9 site 'pacman'
           \ / \ / \ /
           <4>-<2>-<3>
 """
+
+
 plaq9p = {'L': 9,
           'inner': {},
           'outer': {}}
@@ -122,6 +130,19 @@ plaq9p['outer']['n_n_nearest'] = []
 plaq9p['stripes'] = [[0,1,5,6,7],[2,3,4,8]]
 plaq9p['triangles'] = [[3,1,0], [5,3,2], [6,4,3], [8,6,5]]
 plaq9p['n_nearest_sublattice'] = [[0,4,5],[1,2,6], [3,7,8]]
+
+plaq9p['inner']['x_bonds'] = [[0,1],
+                              [2,3], [3,4],
+                              [5,6], [6,7]]
+plaq9p['inner']['y_bonds'] = [[0,2], [1,3],
+                              [3,5], [4,6],
+                              [6,8]]
+plaq9p['inner']['z_bonds'] = [[3,0], [4,1],
+                              [5,2], [6,3], [7,4],
+                              [8,5]]
+plaq9p['outer']['x_bonds'] = [[1,8], [4,2], [7,5], [8,0]]
+plaq9p['outer']['y_bonds'] = [[2,7], [5,1], [7,0], [8,4]]
+plaq9p['outer']['z_bonds'] = [[0,6], [1,7], [2,8]]
 
 """
 Connection diagram for alt. 9 site 'diamond'
@@ -186,6 +207,21 @@ plaq9d['triangles'] = [[4,2,1], [6,4,3], [7,5,4], [8,7,6]]
 plaq9d['n_nearest_sublattice'] = [[0,4,8],
                                   [1,5,6],
                                   [2,3,7]]
+
+plaq9d['inner']['x_bonds'] = [[1,2],
+                             [3,4], [4,5],
+                             [6,7]]
+plaq9d['inner']['y_bonds'] = [[0,1],
+                             [1,3], [2,4],
+                             [4,6], [5,7],
+                             [7,8]]
+plaq9d['inner']['z_bonds'] = [[2,0],
+                             [4,1], [5,2],
+                             [6,3], [7,4],
+                             [8,6]]
+plaq9d['outer']['x_bonds'] = [[0,6], [2,8], [5,3], [7,0], [8,1]]
+plaq9d['outer']['y_bonds'] = [[3,0], [6,2], [8,5]]
+plaq9d['outer']['z_bonds'] = [[0,5], [1,7], [3,8]]
 
 """
 Connection diagram for 12 site truncated triangle
@@ -306,6 +342,21 @@ plaq12['n_n_nearest_sublattice'] = [[0,2,8],
                                     [1,7,9],
                                     [3,5,10],
                                     [4,6,11]]
+
+plaq12['inner']['x_bonds'] = [[0,1], [1,2],
+                              [3,4], [4,5], [5,6],
+                              [7,8], [8,9],
+                              [10, 11]]
+plaq12['inner']['y_bonds'] = [[0,3], [1,4], [2,5],
+                              [4,7], [5,8], [6,9],
+                              [8,10], [9,11]]
+plaq12['inner']['z_bonds'] = [[4,0], [5,1], [6,2],
+                              [7,3], [8,4], [9,5],
+                              [10,7], [11,8]]
+plaq12['outer']['x_bonds'] = [[2,7], [6,10], [9,0], [11,3]]
+                              # [0,9], [3,11], [7,2], [10,6] # THESE ARE BACKWARD?
+plaq12['outer']['y_bonds'] = [[3,2], [7,6], [10,0], [11,1]]
+plaq12['outer']['z_bonds'] = [[0,6], [1,10], [2,11], [3,9]]
 
 
 """
