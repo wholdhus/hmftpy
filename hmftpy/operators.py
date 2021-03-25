@@ -37,10 +37,10 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False, disorder={}
                     if c_op in disorder[n]:
                         r = disorder[n][c_op]
                 for i in range(L):
-                    neighbors = np.array(plaquette['inner'][n][i])
+                    i_neighbors = np.array(plaquette['inner'][n][i])
                     if every_other:
-                        neighbors = neighbors[neighbors < i]
-                    terms += [[c_op, [[coupling*r[i, ni], i, ni] for ni in neighbors]]]
+                        i_neighbors = i_neighbors[i_neighbors < i]
+                    terms += [[c_op, [[coupling*r[i, ni], i, ni] for ni in i_neighbors]]]
         elif n in bonds:
             for c_op in interactions[n]:
                 coupling = interactions[n][c_op]
