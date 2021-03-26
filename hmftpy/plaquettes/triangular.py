@@ -1,3 +1,5 @@
+import numpy as np
+
 def test_bonds(plaquette):
     good = True
     L = plaquette['L']
@@ -21,6 +23,9 @@ def test_bonds(plaquette):
                     good = False
     return good, inner_correct, outer_correct
 
+az = .5*np.sqrt(3) # vertical displacement for equilateral triangles
+
+
 
 
 """
@@ -36,6 +41,10 @@ Connection diagram for 3 site
 plaq3 = {'L': 3,
          'inner': {},
          'outer': {}}
+plaq3['rs'] = [np.array([0, 1, 0.5]), np.array([0, 0, az])]
+plaq3['vs'] = [np.array([1.5, az]), np.array([0, 2*az])]
+plaq3['outline'] = [np.array([0, 1, .5, 0]), np.array([0, 0, az, 0])]
+
 plaq3['inner']['nearest'] = [
             [1,2], [0,2], [0,1]]
 plaq3['inner']['n_nearest'] = [
@@ -85,6 +94,11 @@ Connection diagram for 9 site 'pacman'
 plaq9p = {'L': 9,
           'inner': {},
           'outer': {}}
+plaq9p['rs'] = [np.array([0, 1, -.5, .5, 1.5, 0, 1, 2, .5]),
+                np.array([0, 0, az, az, az, 2*az, 2*az, 2*az, 3*az])]
+plaq9p['vs'] = [np.array([3, 0]), np.array([1.5, 3*az])]
+plaq9p['outline'] = [np.array([0, 1, 1.5, 2, 1, .5, 0, -.5, 0]),
+                     np.array([0, 0, az, 2*az, 2*az, 3*az, 2*az, az, 0])]
 plaq9p['inner']['nearest'] = [
             [1,2,3], # 0
             [0,3,4],
@@ -160,6 +174,11 @@ Connection diagram for alt. 9 site 'diamond'
 plaq9d = {'L': 9,
           'inner': {},
           'outer': {}}
+plaq9d['rs'] = [np.array([0, -.5, .5, -1, 0, 1, -.5, .5, 0]),
+                np.array([0, az, az, 2*az, 2*az, 2*az, 3*az, 3*az, 4*az])]
+plaq9d['vs'] = [np.array([3,0]), np.array([1.5, 3*az])]
+plaq9d['outline'] = [np.array([0, .5, 1, .5, 0, -.5, -1, -.5, 0]),
+                     np.array([0, az, 2*az, 3*az, 4*az, 3*az, 2*az, az, 0])]
 plaq9d['inner']['nearest'] = [
             [1,2], # 0
             [0,2,3,4],
@@ -246,6 +265,11 @@ Connection diagram for 12 site truncated triangle
 plaq12 = {'L': 12,
           'inner': {},
           'outer': {}}
+plaq12['rs'] = [np.array([0, 1, 2, -.5, .5, 1.5, 2.5, 0, 1, 2, .5, 1.5]),
+                np.array([0, 0, 0, az, az, az, az, 2*az, 2*az, 2*az, 3*az, 3*az])]
+plaq12['vs'] = [np.array([3, 2*az]), np.array([0, 4*az])]
+plaq12['outline'] = [np.array([0, 1, 2, 2.5, 2, 1.5, .5, 0, -.5, 0]),
+                     np.array([0, 0, 0, az, 2*az, 3*az, 3*az, 2*az, az, 0])]
 plaq12['inner']['nearest'] = [
             [1,3,4],
             [0,2,4,5],
@@ -378,6 +402,11 @@ Connection diagram for 12 zigzag
 plaq12z = {'L': 12,
            'inner': {},
            'outer': {}}
+plaq12z['rs'] = [np.array([0, 1, 2, -.5, .5, 1.5, 0, 1, 2, -.5, .5, 1.5]),
+                 np.array([0, 0, 0, az, az, az, 2*az, 2*az, 2*az, 3*az, 3*az, 3*az])]
+plaq12z['vs'] = [np.array([3, 0]), np.array([0, 4*az])]
+plaq12z['outline'] = [np.array([0, 2, 1.5, 2, 1.5, -.5, 0, -.5, 0]),
+                      np.array([0, 0, az, 2*az, 3*az, 3*az, 2*az, az, 0])]
 plaq12z['inner']['nearest'] = [
             [1,3,4], # 0
             [0,2,4,5],
@@ -461,6 +490,18 @@ Connection diagram for 21 site
 plaq21 = {'L': 21,
           'inner': {},
           'outer': {}}
+plaq21['xs'] = np.array([0, 1, 2, 
+                         -.5, .5, 1.5, 2.5, 
+                         -1, 0, 1, 2, 3,
+                         -.5, .5, 1.5, 2.5, 3.5,
+                         0, 1, 2,
+                         .5])
+plaq21['ys'] = np.array([0, 0, 0, 
+                         az, az, az, az, 
+                         2*az, 2*az, 2*az, 2*az, 2*az,
+                         3*az, 3*az, 3*az, 3*az, 3*az,
+                         4*az, 4*az, 4*az,
+                         5*az])
 plaq21['inner']['nearest'] = [
             [1,3,4], # 0
             [2,5,4,0], # 1
