@@ -3,17 +3,23 @@ import numpy as np
 def test_bonds(plaquette):
     good = True
     L = plaquette['L']
-    cats = ['nearest', 'n_nearest', 'n_n_nearest']
-    inner_correct = {c: [True for i in range(L)] for c in cats}
-    outer_correct = {c: [True for i in range(L)] for c in cats}
-    for c in cats:
+    icats = ['nearest', 'n_nearest', 'n_n_nearest',
+             'n3_nearest', 'n4_nearest', 'n5_nearest',
+             'n6_nearest', 'n7_nearest']
+    ocats = ['nearest', 'n_nearest', 'n_n_nearest']
+
+    inner_correct = {c: [True for i in range(L)] for c in icats}
+    outer_correct = {c: [True for i in range(L)] for c in ocats}
+    for c in icats:
         for i, sites in enumerate(plaquette['inner'][c]):
+
             for s in sites:
                 if i in plaquette['inner'][c][s]:
                     pass # it's fine
                 else:
                     inner_correct[c][i] = False
                     good = False
+    for c in ocats:
         for i, sites in enumerate(plaquette['outer'][c]):
             for s in sites:
                 if i in plaquette['outer'][c][s]:
@@ -74,9 +80,9 @@ plaq3['outer']['z_bonds'] = [[0,1], [1,2]]
 """
 Connection diagram for 7 site
        5 - 6
-      / \ / \ 
+      / \ / \
      2 - 3 - 4
-      \ / \ / 
+      \ / \ /
        0 - 1
 
 """
@@ -113,6 +119,11 @@ sites = np.arange(7)
 plaq7['outer']['nearest'] = [sites[[s2 not in np.append(plaq7['inner']['nearest'][s], s) for s2 in sites]] for s in sites]
 plaq7['outer']['n_nearest'] = [sites[[s2 not in np.append(plaq7['inner']['n_nearest'][s], s) for s2 in sites]] for s in sites]
 plaq7['outer']['n_n_nearest'] = [sites[[s2 not in np.append(plaq7['inner']['n_n_nearest'][s], s) for s2 in sites]] for s in sites]
+plaq7['inner']['n3_nearest'] = [[] for i in range(12)]
+plaq7['inner']['n4_nearest'] = [[] for i in range(12)]
+plaq7['inner']['n5_nearest'] = [[] for i in range(12)]
+plaq7['inner']['n6_nearest'] = [[] for i in range(12)]
+plaq7['inner']['n7_nearest'] = [[] for i in range(12)]
 
 plaq7['x_stripes'] = [[0,1,5,6],
                       [2,3,4]]
@@ -129,13 +140,13 @@ plaq7['n_nearest_sublattice'] = [[0,4,5],
 Connection diagram for 9 site 'pacman'
 
          <1>- 8 -<0>
-           \ / \ / \ 
-            5 - 6 - 7 
+           \ / \ / \
+            5 - 6 - 7
            / \ / \ /
-          2 - 3 - 4 
-           \ / \ / 
-            0 - 1 
-  
+          2 - 3 - 4
+           \ / \ /
+            0 - 1
+
 """
 
 
@@ -193,6 +204,16 @@ plaq9p['outer']['n_nearest'] = [
             [3,3,8,8],
             [3,3,7,7]] # 8
 plaq9p['outer']['n_n_nearest'] = []
+plaq9p['inner']['n3_nearest'] = [[] for i in range(9)]
+plaq9p['inner']['n3_nearest'][0] = [7,8]
+plaq9p['inner']['n3_nearest'][1] = [8]
+plaq9p['inner']['n3_nearest'][2] = [7]
+plaq9p['inner']['n3_nearest'][7] = [0,2]
+plaq9p['inner']['n3_nearest'][8] = [0,1]
+plaq9p['inner']['n4_nearest'] = [[] for i in range(9)]
+plaq9p['inner']['n5_nearest'] = [[] for i in range(9)]
+plaq9p['inner']['n6_nearest'] = [[] for i in range(9)]
+plaq9p['inner']['n7_nearest'] = [[] for i in range(9)]
 plaq9p['x_stripes'] = [[0,1,5,6,7],[2,3,4,8]]
 plaq9p['y_stripes'] = [[1,4,7,2,5,8],[0,3,6]]
 plaq9p['z_stripes'] = [[0,2,4,6,8],[1,3,5,7]]
@@ -282,6 +303,21 @@ plaq9d['outer']['n_nearest'] = [
             [2,2,3,3],
             [0,0,4,4]] # 8
 plaq9d['outer']['n_n_nearest'] = []
+plaq9d['inner']['n3_nearest'] = [[6,7], # 0
+                                 [8],
+                                 [8], # 2
+                                 [], [], [],
+                                 [0], # 6
+                                 [0],
+                                 [1,2] # 8
+                                 ]
+plaq9d['inner']['n4_nearest'] = [[] for i in range(9)]
+plaq9d['inner']['n4_nearest'][0] = [8]
+plaq9d['inner']['n4_nearest'][8] = [0]
+plaq9d['inner']['n5_nearest'] = [[] for i in range(9)]
+plaq9d['inner']['n6_nearest'] = [[] for i in range(9)]
+plaq9d['inner']['n7_nearest'] = [[] for i in range(9)]
+
 
 plaq9d['rs'] = [np.array([0, -.5, .5, -1, 0, 1, -.5, .5, 0]),
                 np.array([0, az, az, 2*az, 2*az, 2*az, 3*az, 3*az, 4*az])]
@@ -317,8 +353,8 @@ plaq9d['outer']['z_bonds'] = [[0,5], [1,7], [3,8]]
 Connection diagram for 12 site truncated triangle
        10 -11
        / \ / \
-      7 - 8 - 9 
-     / \ / \ / \ 
+      7 - 8 - 9
+     / \ / \ / \
     3 - 4 - 5 - 6
      \ / \ / \ /
       0 - 1 - 2
@@ -340,13 +376,13 @@ plaq12['inner']['nearest'] = [
             [1,5,6], # 2
             [0,4,7],
             [0,1,3,5,7,8], # 4
-            [1,2,4,6,8,9], 
+            [1,2,4,6,8,9],
             [2,5,9], # 6
-            [3,4,8,10], 
+            [3,4,8,10],
             [4,5,7,9,10,11], # 8
-            [5,6,8,11], 
+            [5,6,8,11],
             [7,8,11], # 10
-            [8,9,10] 
+            [8,9,10]
             ]
 plaq12['inner']['n_nearest'] = [
             [5,7], # 0
@@ -369,11 +405,41 @@ plaq12['inner']['n_n_nearest'] = [
             [6,11], # 4
             [3,10],
             [4,11], # 6
-            [1,9], 
+            [1,9],
             [0,2], # 8
             [1,7],
             [3,5], # 10
             [4,6]]
+plaq12['inner']['n3_nearest'] = [
+            [6,9,10], # 0
+            [10,11],
+            [3,7,11], # 2
+            [2,9,11],
+            [], # 4
+            [],
+            [0,7,10], # 6
+            [2,6],
+            [], # 8
+            [0,3],
+            [0,1,6], # 10
+            [1,2,3]]
+plaq12['inner']['n4_nearest'] = [
+            [11], # 0
+            [],
+            [10], # 2
+            [6],
+            [], # 4
+            [],
+            [3], # 6
+            [],
+            [], # 8
+            [],
+            [2], # 10
+            [0]]
+plaq12['inner']['n5_nearest'] = [[] for i in range(12)]
+plaq12['inner']['n6_nearest'] = [[] for i in range(12)]
+plaq12['inner']['n7_nearest'] = [[] for i in range(12)]
+
 plaq12['outer']['nearest'] = [
             [6,9,10],
             [10,11],
@@ -457,10 +523,10 @@ Connection diagram for 12 zigzag
 
        9 -10 -11
         \ / \ / \
-         6 - 7 - 8 
+         6 - 7 - 8
         / \ / \ /
-       3 - 4 - 5 
-        \ / \ / \ 
+       3 - 4 - 5
+        \ / \ / \
          0 - 1 - 2
 """
 plaq12z = {'L': 12,
@@ -534,6 +600,31 @@ plaq12z['outer']['n_nearest'] = [
             [2,2,4,8], # 10
             [0,0,5,6]]
 plaq12z['outer']['n_n_nearest'] = []
+plaq12z['inner']['n3_nearest'] = [
+            [8,9,10], # 0
+            [10,11],
+            [3,6,11], # 2
+            [2,8,11],
+            [], # 4
+            [9],
+            [2], # 6
+            [],
+            [0,3,9], # 8
+            [0,5,8],
+            [0,1], # 10
+            [1,2,3]]
+plaq12z['inner']['n4_nearest'] = [
+            [11], # 0
+            [9],
+            [10], # 2
+            [], [], [], [], [], [],
+            [1],
+            [2], # 10
+            [0]]
+plaq12z['inner']['n5_nearest'] = [[] for i in range(12)]
+plaq12z['inner']['n6_nearest'] = [[] for i in range(12)]
+plaq12z['inner']['n7_nearest'] = [[] for i in range(12)]
+
 plaq12z['rs'] = [np.array([0, 1, 2, -.5, .5, 1.5, 0, 1, 2, -.5, .5, 1.5]),
                  np.array([0, 0, 0, az, az, az, 2*az, 2*az, 2*az, 3*az, 3*az, 3*az])]
 plaq12z['vs'] = [np.array([3, 0]), np.array([0, 4*az])]
@@ -695,6 +786,106 @@ plaq19['outer']['n_n_nearest'] = [
                         [3,6,4,11],
                         [4,12,5]] # 18
 
+plaq19['inner']['n3_nearest'] = [
+                        [6,10,12,13], # 0
+                        [7,11,13,14],
+                        [3,8,14,15], # 2
+                        [2,10,14,16],
+                        [11,15,16,17], # 4
+                        [7,12,17,18],
+                        [0,8,13,18], # 6
+                        [1,5,14,17],
+                        [2,6,15,18], # 8
+                        [],
+                        [0,3,12,16], # 10
+                        [1,4,13,17],
+                        [0,5,10,18], # 12
+                        [0,1,6,11],
+                        [1,2,3,7], # 14
+                        [2,4,8,16],
+                        [3,4,10,15], # 16
+                        [4,5,7,11],
+                        [5,6,8,12]] # 18
+plaq19['inner']['n4_nearest'] = [
+                        [14], # 0
+                        [12,15],
+                        [13], # 2
+                        [6,17],
+                        [18], # 4
+                        [16],
+                        [3,17], # 6
+                        [10],
+                        [11], # 8
+                        [],
+                        [7], # 10
+                        [8],
+                        [1,15], # 12
+                        [2],
+                        [0], # 14
+                        [1,12],
+                        [5], # 16
+                        [3,6],
+                        [4]] # 18
+plaq19['inner']['n5_nearest'] = [
+                        [11,16], # 0
+                        [17],
+                        [7,18], # 2
+                        [15],
+                        [], # 4
+                        [],
+                        [12], # 6
+                        [2,18],
+                        [], # 8
+                        [],
+                        [], # 10
+                        [0,16],
+                        [6], # 12
+                        [],
+                        [], # 14
+                        [3],
+                        [0,11], # 16
+                        [1],
+                        [2,7]] # 18
+plaq19['inner']['n6_nearest'] = [
+                        [15,17], # 0
+                        [16,18],
+                        [12,17], # 2
+                        [11,18],
+                        [], # 4
+                        [],
+                        [7,16], # 6
+                        [6,15],
+                        [], # 8
+                        [],
+                        [], # 10
+                        [3,12],
+                        [2,11], # 12
+                        [],
+                        [], # 14
+                        [0,7],
+                        [1,6], # 16
+                        [0,2],
+                        [1,3]] # 18
+plaq19['inner']['n7_nearest'] = [
+                        [18], # 0
+                        [],
+                        [16], # 2
+                        [],
+                        [], # 4
+                        [],
+                        [], # 6
+                        [11],
+                        [], # 8
+                        [],
+                        [], # 10
+                        [7],
+                        [], # 12
+                        [],
+                        [], # 14
+                        [],
+                        [2], # 16
+                        [],
+                        [0]] # 18
 
 plaq19['n_nearest_sublattice'] = [[0,5,8,11,14,16],
                                   [1,3,6,9,12,15,17],
