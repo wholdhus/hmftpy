@@ -623,6 +623,8 @@ plaq12z['inner']['n4_nearest'] = [
             [0]]
 plaq12z['inner']['n5_nearest'] = [[] for i in range(12)]
 plaq12z['inner']['n6_nearest'] = [[] for i in range(12)]
+plaq12z['inner']['n6_nearest'][2] = [9]
+plaq12z['inner']['n6_nearest'][9] = [2]
 plaq12z['inner']['n7_nearest'] = [[] for i in range(12)]
 
 plaq12z['rs'] = [np.array([0, 1, 2, -.5, .5, 1.5, 0, 1, 2, -.5, .5, 1.5]),
@@ -664,7 +666,7 @@ plaq19['x_stripes'] = [[0,1,2,7,8,9,10,11,16,17,18],
 plaq19['y_stripes'] = [[2,6,11,0,4,9,14,18,7,12,16],
                        [1,5,10,15,3,8,13,17]]
 plaq19['z_stripes'] = [[0,3,7,2,5,9,13,16,11,15,18],
-                       [1,4,8,12,2,5,9,13,16,11,15,18]]
+                       [1,4,8,12,6,10,14,17]]
 plaq19['inner']['nearest'] = [
                         [1,3,4], # 0
                         [2,5,4,0], # 1

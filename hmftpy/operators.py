@@ -18,7 +18,7 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False, disorder={}
     """
     terms = []
     L = plaquette['L']
-    neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
+    neighbors = ['nearest', 'n_nearest', 'n_n_nearest', 'n3_nearest', 'n4_nearest', 'n5_nearest', 'n6_nearest', 'n7_nearest']
     bonds = ['x_bonds', 'y_bonds', 'z_bonds']
     for n in interactions:
         if n == 'local':
