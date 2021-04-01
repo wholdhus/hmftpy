@@ -29,6 +29,26 @@ def test_bonds(plaquette):
                     good = False
     return good, inner_correct, outer_correct
 
+def test_full_bonds(plaquette):
+    L = plaquette['L']
+
+    is_full = [False for i in range(L)]
+    cats = ['nearest', 'n_nearest', 'n_n_nearest',
+            'n3_nearest', 'n4_nearest', 'n5_nearest',
+            'n6_nearest', 'n7_nearest']
+    for i in range(L):
+        lst = []
+        for c in cats:
+            lst += list(plaquette['inner'][c][i])
+        lst += [i]
+        lst = list(np.sort(lst))
+        print(len(lst))
+        if lst == list(range(L)):
+            is_full[i] = True
+    return is_full
+
+
+
 az = .5*np.sqrt(3) # vertical displacement for equilateral triangles
 
 
