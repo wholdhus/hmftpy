@@ -46,7 +46,7 @@ def get_useful_mf_inds(plaquette, interactions):
 def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
             Hi=None, ops=None, lanczos_tol=10**-15, hmft_tol=10**-13,
             v0_start=False, n_states=1, disorder={},
-            mf_cvg=False, every_other=False):
+            mf_cvg=False, every_other=False, v0=None):
     L = plaquette['L']
     if Hi is None:
         Hi = inner_hamiltonian(plaquette, interactions, basis, disorder=disorder, every_other=every_other)
@@ -61,7 +61,7 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
     if n_states < 0:
         e, v = H.eigh()
     else:
-        e, v = H.eigsh(k=n_states, which='SA', tol=lanczos_tol)
+        e, v = H.eigsh(k=n_states, which='SA', tol=lanczos_tol, v0=v0)
     log('Ground state energy with initial seed')
     log(e[0])
 
@@ -70,7 +70,8 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
     mf = get_mfs(vs[0], ops)
     iter = 0
     converged = False
-    v0 = None
+    if v0_start:
+        v0 = v[:,0]
 
     if mf_cvg:
         mf_inds = get_useful_mf_inds(plaquette, interactions)
