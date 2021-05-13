@@ -44,19 +44,19 @@ def get_useful_mf_inds(plaquette, interactions):
 
 
 def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
-            Hi=None, ops=None, lanczos_tol=10**-15, hmft_tol=10**-13,
-            v0_start=False, n_states=1, disorder={},
+            Hi=None, ops=None, lanczos_tol=10**-16, hmft_tol=10**-13,
+            v0_start=False, n_states=1, coeffs={'inner': {}, 'outer': {}},
             mf_cvg=False, every_other=False):
     L = plaquette['L']
     if Hi is None:
-        Hi = inner_hamiltonian(plaquette, interactions, basis, disorder=disorder, every_other=every_other)
+        Hi = inner_hamiltonian(plaquette, interactions, basis, coeffs=coeffs, every_other=every_other)
     if ops is None:
         ops = mf_ops(plaquette, basis)
     if mf0 is None:
         mf0 = {'x': TYPE(2*(np.random.rand(L) - 0.5)),
                'y': TYPE(2*(np.random.rand(L) - 0.5)),
                'z': TYPE(2*(np.random.rand(L) - 0.5))}
-    H = Hi + outer_hamiltonian(plaquette, mf0, interactions, basis, disorder=disorder, every_other=every_other)
+    H = Hi + outer_hamiltonian(plaquette, mf0, interactions, basis, coeffs=coeffs, every_other=every_other)
     log('Hamiltonian complete!')
     if n_states < 0:
         e, v = H.eigh()
@@ -78,7 +78,7 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
     while iter < max_iter and not converged:
         iter += 1
         log('{}th iteration'.format(iter))
-        H = Hi + outer_hamiltonian(plaquette, mf, interactions, basis, disorder=disorder, every_other=every_other)
+        H = Hi + outer_hamiltonian(plaquette, mf, interactions, basis, coeffs=coeffs, every_other=every_other)
         if n_states < 0:
             e, v = H.eigh()
             es_degen = e[np.abs(e - e[0]) < 5*lanczos_tol]

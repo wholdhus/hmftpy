@@ -31,9 +31,18 @@ Functions in this package use the following formats for input and output diction
 
     interactions = {'local': {'z': -2},
                     'nearest': {'xx': 1, 'yy': 1},
-                    'n_nearest': {'xy': 1, 'yx': -1}}
+                    'n_nearest': {'xy': 1, 'yx': -1},
                     'n_n_nearest': {'yx': -1, 'yx', -1}}
 
     mean_fields = {'x': [List of <sigma_i^x> for i in cluster],
                    'y': [List of <sigma_i^y> for i in cluster],
                    'z': [List of <sigma_i^z> for i in cluster]}
+
+    coeffs = {'inner': {local': {'z': 1-D NUMPY ARRAY OF LENGTH L},
+                        'nearest': {'xx': 2-D NUMPY ARRAY OF LENGTH L, 'yy': ...},
+                        'n_nearest': {'xy': ..., 'yx': ...},
+                        'n_n_nearest': {'yx': ..., 'yx', ...}}
+              'outer': {local': {'z': ...},
+                        'nearest': {'xx': ..., 'yy': ...},
+                        'n_nearest': {'xy': ..., 'yx': ...},
+                        'n_n_nearest': {'yx': ..., 'yx', ...}}}
