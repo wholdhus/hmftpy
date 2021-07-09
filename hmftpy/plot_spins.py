@@ -5,7 +5,7 @@ import numpy as np
 cm = matplotlib.cm.magma
 norm = matplotlib.colors.Normalize(vmin=-0.5, vmax=0.5)
 
-def draw_tri_lattice(r0, Lx, Ly, color='lightgray'):
+def draw_tri_lattice(Lx, Ly, r0=(0,0), color='lightgray'):
     az = .5*np.sqrt(3) # vertical displacement for equilateral triangles
     x0, y0 = r0
     x, y = x0, y0
@@ -23,8 +23,11 @@ def draw_tri_lattice(r0, Lx, Ly, color='lightgray'):
         else:
             x = x0 - .5
             y = y0 + (i+1)*az
+
+            
+
     
-def draw_cluster(plaq, r0, color='purple', fill=False):
+def draw_cluster(plaq, r0=(0,0), color='purple'):
     x0, y0 = r0
     plt.plot(plaq['outline'][0]+x0, plaq['outline'][1]+y0,
              color=color, zorder=1, linewidth=1)

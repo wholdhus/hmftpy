@@ -114,6 +114,10 @@ Connection diagram for 7 site
 plaq7 = {'L': 7,
          'inner': {},
          'outer': {}}
+plaq7['outline'] = [np.array([0, 1, 1.5, 1, 0, -.5, 0]),
+                     np.array([0, 0, az, 2*az, 2*az, az, 0])]
+plaq7['rs'] = [np.array([0, 1, -.5, .5, 1.5, 0, 1]),
+                np.array([0, 0, az, az, az, 2*az, 2*az])]
 plaq7['inner']['nearest'] = [[1,3,2],
                     [4,3,0],
                     [0,3,5],

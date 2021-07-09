@@ -1,7 +1,7 @@
 import numpy as np
 from quspin.basis import spin_basis_1d, tensor_basis
-from quspin.operators import hamiltonian, quantum_operator, quantum_LinearOperator
-from .operators import inner_hamiltonian, outer_hamiltonian, mf_ops
+from quspin.operators import hamiltonian, quantum_operator
+from .operators import inner_hamiltonian, outer_hamiltonian, mf_ops, outer_z_hamiltonian
 
 VERBOSE = False
 TYPE = np.complex128
@@ -20,9 +20,9 @@ def get_mfs(v, mf_ops):
     ymfs = np.zeros(L, dtype=TYPE)
     zmfs = np.zeros(L, dtype=TYPE)
     for i in range(L):
-        xmfs[i] = mf_ops[i]['x'].matrix_ele(v, v)
-        ymfs[i] = mf_ops[i]['y'].matrix_ele(v, v)
-        zmfs[i] = mf_ops[i]['z'].matrix_ele(v, v)
+        xmfs[i] = mf_ops[i]['x'].expt_value(v)
+        ymfs[i] = mf_ops[i]['y'].expt_value(v)
+        zmfs[i] = mf_ops[i]['z'].expt_value(v)
     mfs = {'x': xmfs, 'y': ymfs, 'z': zmfs}
     return mfs
 
@@ -46,16 +46,17 @@ def get_useful_mf_inds(plaquette, interactions):
 def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
             Hi=None, ops=None, lanczos_tol=10**-15, hmft_tol=10**-13,
             v0_start=False, n_states=1, disorder={},
-            mf_cvg=False, every_other=False, v0=None):
+            mf_cvg=False, every_other=False, v0=None, noise_scale=None,
+            rescale_e=False):
     L = plaquette['L']
     if Hi is None:
         Hi = inner_hamiltonian(plaquette, interactions, basis, disorder=disorder, every_other=every_other)
     if ops is None:
         ops = mf_ops(plaquette, basis)
     if mf0 is None:
-        mf0 = {'x': TYPE(2*(np.random.rand(L) - 0.5)),
-               'y': TYPE(2*(np.random.rand(L) - 0.5)),
-               'z': TYPE(2*(np.random.rand(L) - 0.5))}
+        mf0 = {'x': TYPE((np.random.rand(L) - 0.5)),
+               'y': TYPE((np.random.rand(L) - 0.5)),
+               'z': TYPE((np.random.rand(L) - 0.5))}
     H = Hi + outer_hamiltonian(plaquette, mf0, interactions, basis, disorder=disorder, every_other=every_other)
     log('Hamiltonian complete!')
     if n_states < 0:
@@ -70,6 +71,8 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
     mf = get_mfs(vs[0], ops)
     iter = 0
     converged = False
+    if noise_scale is not None:
+        noised = False
     if v0_start:
         v0 = v[:,0]
 
@@ -103,6 +106,22 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
         else: # basing convergence on energy
             cvg = np.abs(energies[iter] - energies[iter-1])
         if cvg < hmft_tol:
+            log('Converged!')
+            log('!!')
+            log('!!')
             converged = True
+            if noise_scale is not None:
+                if not noised:
+                    log('Adding noise now!')
+                    mf['x'] += noise_scale * TYPE((np.random.rand(L) - 0.5))
+                    mf['y'] += noise_scale * TYPE((np.random.rand(L) - 0.5))
+                    mf['z'] += noise_scale * TYPE((np.random.rand(L) - 0.5))
+                    converged = False
+                    noised = True
+                else:
+                    log('Noise already added')
+                    converged = True
     e0 = energies[-1]
+    if rescale_e:
+        e0 = 0.5*(energies[-1] + Hi.expt_value(vs[-1])) # H_in + 0.5*H_out 
     return np.real(e0), vs[-1], mf, converged

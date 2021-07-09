@@ -19,7 +19,7 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False, disorder={}
     terms = []
     L = plaquette['L']
     neighbors = ['nearest', 'n_nearest', 'n_n_nearest', 'n3_nearest', 'n4_nearest', 'n5_nearest', 'n6_nearest', 'n7_nearest']
-    bonds = ['x_bonds', 'y_bonds', 'z_bonds']
+    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds']
     for n in interactions:
         if n == 'local':
             for c_op in interactions[n]:
@@ -39,7 +39,7 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False, disorder={}
                 for i in range(L):
                     i_neighbors = np.array(plaquette['inner'][n][i])
                     if every_other:
-                        i_neighbors = i_neighbors[i_neighbors < i]
+                        i_neighbors = i_neighbors[i_neighbors > i]
                     terms += [[c_op, [[coupling*r[i, ni], i, ni] for ni in i_neighbors]]]
         elif n in bonds:
             for c_op in interactions[n]:
@@ -73,7 +73,7 @@ def periodic_hamiltonian(plaquette, interactions, basis, verbose=False, disorder
     terms = []
     L = plaquette['L']
     neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
-    bonds = ['x_bonds', 'y_bonds', 'z_bonds']
+    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds']
     for n in interactions:
         if n == 'local':
             for c_op in interactions[n]:
@@ -94,8 +94,8 @@ def periodic_hamiltonian(plaquette, interactions, basis, verbose=False, disorder
                     i_neighbors = np.array(plaquette['inner'][n][i])
                     o_neighbors = np.array(plaquette['outer'][n][i])
                     if every_other:
-                        i_neighbors = i_neighbors[i_neighbors < i]
-                        o_neighbors = o_neighbors[o_neighbors < i]
+                        i_neighbors = i_neighbors[i_neighbors > i]
+                        o_neighbors = o_neighbors[o_neighbors > i]
                     terms += [[c_op, [[coupling*r[i,ni], i, ni] for ni in i_neighbors]]]
                     terms += [[c_op, [[coupling*r[i,ni], i, ni] for ni in o_neighbors]]]
         elif n in bonds:
@@ -130,7 +130,7 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False
     L = plaquette['L']
     terms = []
     neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
-    bonds = ['x_bonds', 'y_bonds', 'z_bonds']
+    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds']
     for n in interactions:
         if n in neighbors:
             for c_op in interactions[n]:
@@ -142,7 +142,7 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False
                 for i in range(L):
                     o_neighbors = np.array(plaquette['outer'][n][i])
                     if every_other:
-                        o_neighbors = o_neighbors[o_neighbors < i]
+                        o_neighbors = o_neighbors[o_neighbors > i]
                     terms += [[c_op[1], [[coupling*mean_fields[c_op[0]][ni]*r[i,ni], i] for ni in o_neighbors]]]
         elif n in bonds:
             for c_op in interactions[n]:
@@ -152,6 +152,23 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False
             pass
         else:
             raise Exception('Unknown interaction type {}'.format(n))
+    Ho = quantum_operator({'static': terms}, basis=basis, check_herm=checks,
+                          check_symm=checks, dtype=TYPE)
+    # if str(Ho) == '':
+        # raise Exception('Null operator')
+    return Ho
+
+def outer_z_hamiltonian(plaquette, mean_fields, interactions, basis,
+                        checks=False):
+    L = plaquette['L']
+    terms = []
+    neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
+    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds']
+    for i in range(L):
+        if 'nearest' in interactions:
+            terms += [['z', [[interactions['nearest']['zz']*mean_fields['z'][n], i] for n in plaquette['outer']['nearest'][i]]]]
+        if 'n_nearest' in interactions:
+            terms += [['z', [[interactions['nearest']['zz']*mean_fields['z'][n], i] for n in plaquette['outer']['nearest'][i]]]]
     Ho = quantum_operator({'static': terms}, basis=basis, check_herm=checks,
                           check_symm=checks, dtype=TYPE)
     # if str(Ho) == '':
