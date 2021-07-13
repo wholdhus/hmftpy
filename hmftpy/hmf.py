@@ -49,6 +49,9 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
             mf_cvg=False, every_other=False, v0=None, noise_scale=None,
             rescale_e=False):
     L = plaquette['L']
+    
+    if 'n_bonds' in interactions:
+        rescale_e=True
     if Hi is None:
         Hi = inner_hamiltonian(plaquette, interactions, basis, disorder=disorder, every_other=every_other)
     if ops is None:
@@ -57,31 +60,16 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
         mf0 = {'x': TYPE((np.random.rand(L) - 0.5)),
                'y': TYPE((np.random.rand(L) - 0.5)),
                'z': TYPE((np.random.rand(L) - 0.5))}
-    H = Hi + outer_hamiltonian(plaquette, mf0, interactions, basis, disorder=disorder, every_other=every_other)
-    log('Hamiltonian complete!')
-    if n_states < 0:
-        e, v = H.eigh()
-    else:
-        e, v = H.eigsh(k=n_states, which='SA', tol=lanczos_tol, v0=v0)
-    log('Ground state energy with initial seed')
-    log(e[0])
 
-    energies = [e[0]]
-    vs = [v[:, 0]]
-    mf = get_mfs(vs[0], ops)
-    iter = 0
+    energies = []
+    vs = []
+    mf = mf0
+    it = 0
     converged = False
-    if noise_scale is not None:
-        noised = False
-    if v0_start:
-        v0 = v[:,0]
-
     if mf_cvg:
         mf_inds = get_useful_mf_inds(plaquette, interactions)
-
-    while iter < max_iter and not converged:
-        iter += 1
-        log('{}th iteration'.format(iter))
+    while it < max_iter and not converged:
+        log('{}th iteration'.format(it))
         H = Hi + outer_hamiltonian(plaquette, mf, interactions, basis, disorder=disorder, every_other=every_other)
         if n_states < 0:
             e, v = H.eigh()
@@ -95,16 +83,17 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
         mf = get_mfs(v[:,0], ops)
         energies += [e[0]]
         vs += [v[:, 0]]
-        if mf_cvg:
-            mf_r = [mf[u][mf_inds[u]] for u in ['x', 'y', 'z']]
-            cvg = 100
-            if iter > 1:
-                cvg = np.sum(np.linalg.norm(mf_r[i] - prev_mf_r[i]) for i in range(3))
-                log('Total distance from previous mean fields')
-                log(cvg)
-            prev_mf_r = mf_r
-        else: # basing convergence on energy
-            cvg = np.abs(energies[iter] - energies[iter-1])
+        cvg = 999
+        if it > 0:
+            if mf_cvg:
+                mf_r = [mf[u][mf_inds[u]] for u in ['x', 'y', 'z']]
+                if it > 1:
+                    cvg = np.sum(np.linalg.norm(mf_r[i] - prev_mf_r[i]) for i in range(3))
+                    log('Total distance from previous mean fields')
+                    log(cvg)
+                prev_mf_r = mf_r
+            else: # basing convergence on energy
+                cvg = np.abs(energies[it] - energies[it-1])
         if cvg < hmft_tol:
             log('Converged!')
             log('!!')
@@ -121,6 +110,7 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
                 else:
                     log('Noise already added')
                     converged = True
+        it += 1
     e0 = energies[-1]
     if rescale_e:
         e0 = 0.5*(energies[-1] + Hi.expt_value(vs[-1])) # H_in + 0.5*H_out 
