@@ -19,7 +19,7 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False, disorder={}
     terms = []
     L = plaquette['L']
     neighbors = ['nearest', 'n_nearest', 'n_n_nearest', 'n3_nearest', 'n4_nearest', 'n5_nearest', 'n6_nearest', 'n7_nearest']
-    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds']
+    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds', 'a_bonds', 'b_bonds']
     for n in interactions:
         if n == 'local':
             for c_op in interactions[n]:
@@ -73,7 +73,7 @@ def periodic_hamiltonian(plaquette, interactions, basis, verbose=False, disorder
     terms = []
     L = plaquette['L']
     neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
-    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds']
+    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds', 'a_bonds', 'b_bonds']
     for n in interactions:
         if n == 'local':
             for c_op in interactions[n]:
@@ -130,7 +130,7 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False
     L = plaquette['L']
     terms = []
     neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
-    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds']
+    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds', 'a_bonds', 'b_bonds']
     for n in interactions:
         if n in neighbors:
             for c_op in interactions[n]:
@@ -176,7 +176,7 @@ def outer_z_hamiltonian(plaquette, mean_fields, interactions, basis,
     return Ho
 
 
-def mf_ops(plaquette, basis):
+def get_mf_ops(plaquette, basis):
     """
     Constructs a dict of QuSpin quantum operators for all components of spin on
         each site of the cluster

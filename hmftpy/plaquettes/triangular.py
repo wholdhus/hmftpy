@@ -3,10 +3,8 @@ import numpy as np
 def test_bonds(plaquette):
     good = True
     L = plaquette['L']
-    icats = ['nearest', 'n_nearest', 'n_n_nearest',
-             'n3_nearest', 'n4_nearest', 'n5_nearest',
-             'n6_nearest', 'n7_nearest']
-    ocats = ['nearest', 'n_nearest', 'n_n_nearest']
+    icats = ['nearest', 'n_nearest']
+    ocats = ['nearest', 'n_nearest']
 
     inner_correct = {c: [True for i in range(L)] for c in icats}
     outer_correct = {c: [True for i in range(L)] for c in ocats}
@@ -375,14 +373,6 @@ plaq9d['outer']['z_bonds'] = [[0,5], [1,7], [3,8]]
 
 """
 Connection diagram for 12 site truncated triangle
-       10 -11
-       / \ / \
-      7 - 8 - 9
-     / \ / \ / \
-    3 - 4 - 5 - 6
-     \ / \ / \ /
-      0 - 1 - 2
-
      <0> <1> <2>
        \ / \ /
    <6>-10 -11 -<3>
@@ -405,7 +395,7 @@ plaq12['y_stripes'] = [[2,6,0,4,8,11],
 plaq12['z_stripes'] = [[0,3,2,5,8,10],
                        [1,4,7,6,9,11]]
 plaq12['inner']['n_bonds'] = [
-            [0,1], [0,4], [0,3], [1,2], [1,5], [1,4], [2,6], [2,5]
+            [0,1], [0,4], [0,3], [1,2], [1,5], [1,4], [2,6], [2,5],
             [3,4], [3,7], [4,5], [4,8], [4,7], [5,6], [5,9], [5,8], [6,9],
             [7,8], [7,10], [8,9], [8,11], [8,10], [9,11], [10,11]]
 plaq12['inner']['nn_bonds'] = [
@@ -1007,30 +997,62 @@ plaq21['inner']['n_n_nearest'] = []
 plaq21['outer']['n_n_nearest'] = []
 
 
-"""
-27 site
 
-             24 -25 -26
-             / \ / \ / \
-           20 -21 -22 -23
-           / \ / \ / \ / \
-         15 -16 -17 -18 -19
-         / \ / \ / \ / \ / \
-        9 -10 -11 -12 -13 -14
-         \ / \ / \ / \ / \ /
-          4 - 5 - 6 - 7 - 8
-           \ / \ / \ / \ /
-            0 - 1 - 2 - 3
-
-"""
-plaq21 = {'L': 27,
-          'inner': {},
-          'outer': {}}
-plaq21['xs'] = np.array([])
-plaq21['ys'] = np.array([])
-plaq21['inner']['nearest'] = []
-plaq21['outer']['nearest'] = []
-plaq21['inner']['n_nearest'] = []
-plaq21['outer']['n_nearest'] = []
-plaq21['inner']['n_n_nearest'] = []
-plaq21['outer']['n_n_nearest'] = []
+def paralellogram(Lx, Ly, offset=0):
+    N = Lx * Ly
+    sites = np.arange(N).reshape((Lx, Ly))
+    plaq = {'L': N,
+            'inner': {'nearest': [[] for i in range(N)],
+                      'n_nearest': [[] for i in range(N)]},
+            'outer': {'nearest': [[] for i in range(N)],
+                      'n_nearest': [[] for i in range(N)]}}
+    for i in range(N):
+        if (i + 1) % Lx != 0:
+            plaq['inner']['nearest'][i] += [i + 1]
+            plaq['inner']['nearest'][i + 1] += [i]
+        else:
+            plaq['outer']['nearest'][i] += [(i - Lx + 1 + offset * Lx) % N]
+            plaq['outer']['nearest'][(i - Lx + 1 + offset * Lx) % N] += [i]
+        if i + Lx < N:
+            plaq['inner']['nearest'][i] += [i + Lx] # right
+            plaq['inner']['nearest'][i + Lx] += [i]
+            if i % Lx != 0:
+                plaq['inner']['nearest'][i] += [i + Lx - 1] # left
+                plaq['inner']['nearest'][i + Lx - 1] += [i]
+            else:
+                plaq['outer']['nearest'][i] += [(i + (2-offset) * Lx - 1) % N]
+                plaq['outer']['nearest'][(i + (2-offset) * Lx - 1) % N] += [i]
+        else:
+            plaq['outer']['nearest'][i] += [(i + (offset+1)*Lx) % N]
+            plaq['outer']['nearest'][(i + (offset+1)*Lx) % N] += [i]
+        if i + 2 * Lx - 1 < N:
+            if i % Lx != 0:
+                plaq['inner']['n_nearest'][i] += [i + 2 * Lx - 1]
+                plaq['inner']['n_nearest'][i + 2 * Lx - 1] += [i]
+            else:
+                plaq['outer']['n_nearest'][i] += [(i + 3 * Lx - 1) % N]
+                plaq['outer']['n_nearest'][(i + 3 * Lx - 1) % N] += [i]
+        else:
+            plaq['outer']['n_nearest'][i] += [(i + 2 * Lx - 1) % N]
+            plaq['outer']['n_nearest'][(i + 2 * Lx - 1) % N] += [i]
+        if i + Lx + 1 < N:
+            if i % Lx != Lx - 1:
+                plaq['inner']['n_nearest'][i] += [i + Lx + 1]
+                plaq['inner']['n_nearest'][i + Lx + 1] += [i]
+            else:
+                plaq['outer']['n_nearest'][i] += [(i + 1) % N]
+                plaq['outer']['n_nearest'][(i + 1) % N] += [i]
+        else:
+            plaq['outer']['n_nearest'][i] += [(i + 1) % N]
+            plaq['outer']['n_nearest'][(i + 1) % N] += [i]
+        if i % Lx > 1:
+            if i + Lx - 2 < N:
+                plaq['inner']['n_nearest'][i] += [i + Lx - 2]
+                plaq['inner']['n_nearest'][i + Lx - 2] += [i]
+            else:
+                plaq['outer']['n_nearest'][i] += [(i + Lx - 2) % N]
+                plaq['outer']['n_nearest'][(i + Lx - 2) % N] += [i]
+        else:
+            plaq['outer']['n_nearest'][i] += [(i + 2 * Lx - 2) % N]
+            plaq['outer']['n_nearest'][(i + 2 * Lx - 2) % N] += [i]
+    return plaq

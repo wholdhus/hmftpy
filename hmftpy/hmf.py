@@ -1,7 +1,5 @@
 import numpy as np
-from quspin.basis import spin_basis_1d, tensor_basis
-from quspin.operators import hamiltonian, quantum_operator
-from .operators import inner_hamiltonian, outer_hamiltonian, mf_ops, outer_z_hamiltonian
+from .operators import inner_hamiltonian, outer_hamiltonian, get_mf_ops
 
 VERBOSE = False
 TYPE = np.complex128
@@ -39,23 +37,24 @@ def get_useful_mf_inds(plaquette, interactions):
                         if c_op[1] == u:
                             good_inds[u] += neighbors
     for u in ['x', 'y', 'z']:
-        good_inds[u]= list(set(good_inds[u]))
+        good_inds[u] = list(set(good_inds[u]))
     return good_inds
 
 
 def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
             Hi=None, ops=None, lanczos_tol=10**-15, hmft_tol=10**-13,
             v0_start=False, n_states=1, disorder={},
-            mf_cvg=False, every_other=False, v0=None, noise_scale=None,
+            mf_cvg=False, every_other=False, v0=None,
             rescale_e=False):
     L = plaquette['L']
-    
-    if 'n_bonds' in interactions:
-        rescale_e=True
+
+    if 'n_bonds' in interactions or 'x_bonds' in interactions:
+        rescale_e = True
     if Hi is None:
-        Hi = inner_hamiltonian(plaquette, interactions, basis, disorder=disorder, every_other=every_other)
+        Hi = inner_hamiltonian(plaquette, interactions, basis,
+                               disorder=disorder, every_other=every_other)
     if ops is None:
-        ops = mf_ops(plaquette, basis)
+        ops = get_mf_ops(plaquette, basis)
     if mf0 is None:
         mf0 = {'x': TYPE((np.random.rand(L) - 0.5)),
                'y': TYPE((np.random.rand(L) - 0.5)),
@@ -70,17 +69,18 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
         mf_inds = get_useful_mf_inds(plaquette, interactions)
     while it < max_iter and not converged:
         log('{}th iteration'.format(it))
-        H = Hi + outer_hamiltonian(plaquette, mf, interactions, basis, disorder=disorder, every_other=every_other)
+        H = Hi + outer_hamiltonian(plaquette, mf, interactions, basis,
+                                   disorder=disorder, every_other=every_other)
         if n_states < 0:
             e, v = H.eigh()
             es_degen = e[np.abs(e - e[0]) < 5*lanczos_tol]
             log('Ground state degeneracy: {}'.format(len(es_degen)))
         else:
-            e, v = H.eigsh(k=n_states, which = 'SA', tol=lanczos_tol, v0=v0) # just finding lowest energies
+            e, v = H.eigsh(k=n_states, which='SA', tol=lanczos_tol, v0=v0)
         if v0_start:
-            v0 = v[:,0]
+            v0 = v[:, 0]
         log('Energy: {}'.format(e[0]))
-        mf = get_mfs(v[:,0], ops)
+        mf = get_mfs(v[:, 0], ops)
         energies += [e[0]]
         vs += [v[:, 0]]
         cvg = 999
@@ -88,30 +88,17 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
             if mf_cvg:
                 mf_r = [mf[u][mf_inds[u]] for u in ['x', 'y', 'z']]
                 if it > 1:
-                    cvg = np.sum(np.linalg.norm(mf_r[i] - prev_mf_r[i]) for i in range(3))
+                    cvg = np.sum([np.linalg.norm(mf_r[i] - prev_mf_r[i])
+                                  for i in range(3)])
                     log('Total distance from previous mean fields')
                     log(cvg)
                 prev_mf_r = mf_r
             else: # basing convergence on energy
                 cvg = np.abs(energies[it] - energies[it-1])
         if cvg < hmft_tol:
-            log('Converged!')
-            log('!!')
-            log('!!')
             converged = True
-            if noise_scale is not None:
-                if not noised:
-                    log('Adding noise now!')
-                    mf['x'] += noise_scale * TYPE((np.random.rand(L) - 0.5))
-                    mf['y'] += noise_scale * TYPE((np.random.rand(L) - 0.5))
-                    mf['z'] += noise_scale * TYPE((np.random.rand(L) - 0.5))
-                    converged = False
-                    noised = True
-                else:
-                    log('Noise already added')
-                    converged = True
         it += 1
     e0 = energies[-1]
     if rescale_e:
-        e0 = 0.5*(energies[-1] + Hi.expt_value(vs[-1])) # H_in + 0.5*H_out 
+        e0 = 0.5*(energies[-1] + Hi.expt_value(vs[-1])) # H_in + 0.5*H_out
     return np.real(e0), vs[-1], mf, converged
