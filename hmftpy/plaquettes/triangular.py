@@ -946,59 +946,7 @@ plaq19['n_nearest_sublattice'] = [[0,5,8,11,14,16],
                                   [2,4,7,10,13,18]]
 
 
-"""
-Connection diagram for 21 site
-
-
-             20
-             / \
-           16 -17 -18 -19
-           / \ / \ / \ /
-         12 -13 -14 -15
-         / \ / \ / \ / \
-        7 - 8 - 9 -10 -11
-         \ / \ / \ / \ /
-          3 - 4 - 5 - 6
-           \ / \ / \ /
-            0 - 1 - 2
-
-"""
-plaq21 = {'L': 21,
-          'inner': {},
-          'outer': {}}
-plaq21['xs'] = np.array([])
-plaq21['ys'] = np.array([])
-plaq21['inner']['nearest'] = [
-            [1,3,4], # 0
-            [0,2,4,5], # 1
-            [1,5,6], # 2
-            [0,4,7,8], # 3
-            [0,1,3,5,8,9], # 4
-            [1,2,4,6,9,10], # 5
-            [2,5,10,11], # 6
-            [3,8,12], # 7
-            [3,4,7,9,12,13], # 8
-            [4,5,8,10,13,14], # 9
-            [5,6,9,11,14,15], # 10
-            [6,10,15], # 11
-            [7,8,13,16], # 12
-            [8,9,12,14,16,17], # 13
-            [9,10,13,15,17,18], # 14
-            [10,11,14,18,19], # 15
-            [12,13,17,20], # 16
-            [13,14,16,18,20], # 17
-            [14,15,17,19], # 18
-            [15,18],
-            [16,17]] # 20
-plaq21['outer']['nearest'] = []
-plaq21['inner']['n_nearest'] = []
-plaq21['outer']['n_nearest'] = []
-plaq21['inner']['n_n_nearest'] = []
-plaq21['outer']['n_n_nearest'] = []
-
-
-
-def paralellogram(Lx, Ly, offset=0):
+def paralellogram(Lx, Ly, offset_x=0, offset_y=0):
     N = Lx * Ly
     sites = np.arange(N).reshape((Lx, Ly))
     plaq = {'L': N,
@@ -1007,52 +955,73 @@ def paralellogram(Lx, Ly, offset=0):
             'outer': {'nearest': [[] for i in range(N)],
                       'n_nearest': [[] for i in range(N)]}}
     for i in range(N):
-        if (i + 1) % Lx != 0:
-            plaq['inner']['nearest'][i] += [i + 1]
-            plaq['inner']['nearest'][i + 1] += [i]
+        print(i)
+        if i % Lx != Lx - 1:
+            print('{} has inner horizontal neighbors'.format(i))
+            plaq['inner']['nearest'][i] += [i + 1] # right
+            plaq['inner']['nearest'][i + 1] += [i] # left
         else:
-            plaq['outer']['nearest'][i] += [(i - Lx + 1 + offset * Lx) % N]
-            plaq['outer']['nearest'][(i - Lx + 1 + offset * Lx) % N] += [i]
+            plaq['outer']['nearest'][i] += [(i - (1+offset_y)*Lx + 1) % N] # right
+            plaq['outer']['nearest'][(i - (1+offset_y)*Lx + 1) % N] += [i] # left
         if i + Lx < N:
-            plaq['inner']['nearest'][i] += [i + Lx] # right
-            plaq['inner']['nearest'][i + Lx] += [i]
-            if i % Lx != 0:
-                plaq['inner']['nearest'][i] += [i + Lx - 1] # left
-                plaq['inner']['nearest'][i + Lx - 1] += [i]
-            else:
-                plaq['outer']['nearest'][i] += [(i + (2-offset) * Lx - 1) % N]
-                plaq['outer']['nearest'][(i + (2-offset) * Lx - 1) % N] += [i]
+            print('{} has inner upper left neighbors'.format(i))
+            plaq['inner']['nearest'][i] += [i + Lx] # upper left
+            plaq['inner']['nearest'][i + Lx] += [i] # lower right
         else:
-            plaq['outer']['nearest'][i] += [(i + (offset+1)*Lx) % N]
-            plaq['outer']['nearest'][(i + (offset+1)*Lx) % N] += [i]
-        if i + 2 * Lx - 1 < N:
-            if i % Lx != 0:
-                plaq['inner']['n_nearest'][i] += [i + 2 * Lx - 1]
-                plaq['inner']['n_nearest'][i + 2 * Lx - 1] += [i]
-            else:
-                plaq['outer']['n_nearest'][i] += [(i + 3 * Lx - 1) % N]
-                plaq['outer']['n_nearest'][(i + 3 * Lx - 1) % N] += [i]
+            plaq['outer']['nearest'][i] += [(i + Lx - offset_x) % Lx] # upper left
+            plaq['outer']['nearest'][(i + Lx - offset_x) % Lx] += [i] # lower right
+        if i + Lx + 1 < N and i % Lx != Lx - 1:
+            print('{} has inner upper right neighbors'.format(i))
+            plaq['inner']['nearest'][i] += [i + Lx + 1] # upper right
+            plaq['inner']['nearest'][i + Lx + 1] += [i] # lower left
+        elif i % Lx != Lx - 1:
+            plaq['outer']['nearest'][i] += [(i + Lx + 1 - offset_x) % Lx] # upper right
+            plaq['outer']['nearest'][(i + Lx + 1 - offset_x) % Lx] += [i]
         else:
-            plaq['outer']['n_nearest'][i] += [(i + 2 * Lx - 1) % N]
-            plaq['outer']['n_nearest'][(i + 2 * Lx - 1) % N] += [i]
-        if i + Lx + 1 < N:
-            if i % Lx != Lx - 1:
-                plaq['inner']['n_nearest'][i] += [i + Lx + 1]
-                plaq['inner']['n_nearest'][i + Lx + 1] += [i]
-            else:
-                plaq['outer']['n_nearest'][i] += [(i + 1) % N]
-                plaq['outer']['n_nearest'][(i + 1) % N] += [i]
+            plaq['outer']['nearest'][i] += [(i + 1 - offset_y * Lx) % N]
+            plaq['outer']['nearest'][(i + 1 - offset_y * Lx) % N] += [i]
+        if i + 2 * Lx + 1 < N and i % Lx != Lx - 1:
+            print('{} has inner vertical nneighbors'.format(i))
+            plaq['inner']['n_nearest'][i] += [i + 2 * Lx + 1]
+            plaq['inner']['n_nearest'][i + 2 * Lx + 1] += [i]
+        elif i % Lx != Lx - 1:
+            plaq['outer']['n_nearest'][i] += [(i + 2 * Lx + 1 - offset_x) % N]
+            plaq['outer']['n_nearest'][(i + 2 * Lx + 1 - offset_x) % N] += [i]
         else:
-            plaq['outer']['n_nearest'][i] += [(i + 1) % N]
-            plaq['outer']['n_nearest'][(i + 1) % N] += [i]
-        if i % Lx > 1:
-            if i + Lx - 2 < N:
-                plaq['inner']['n_nearest'][i] += [i + Lx - 2]
-                plaq['inner']['n_nearest'][i + Lx - 2] += [i]
-            else:
-                plaq['outer']['n_nearest'][i] += [(i + Lx - 2) % N]
-                plaq['outer']['n_nearest'][(i + Lx - 2) % N] += [i]
+            plaq['outer']['n_nearest'][i] += [(i + (1-offset_y)*Lx + 1) % N]
+            plaq['outer']['n_nearest'][(i + (1-offset_y)*Lx + 1) % N] += [i]
+        if i < N - Lx and i % Lx != 0: # not top row
+            print('{} has inner upper left nneighbors'.format(i))
+            plaq['inner']['n_nearest'][i] += [i + Lx - 1]
+            plaq['inner']['n_nearest'][i + Lx - 1] += [i]
+        elif i % Lx != 0:
+            plaq['outer']['n_nearest'][i] += [(i + Lx - 1) % N]
+            plaq['outer']['n_nearest'][(i + Lx - 1)% N] += [i]
         else:
-            plaq['outer']['n_nearest'][i] += [(i + 2 * Lx - 2) % N]
-            plaq['outer']['n_nearest'][(i + 2 * Lx - 2) % N] += [i]
+            plaq['outer']['n_nearest'][i] += [(i + (2+offset_y) * Lx - 1) % N]
+            plaq['outer']['n_nearest'][(i + (2+offset_y) * Lx - 1) % N] += [i]
+        if i < N - Lx and i % Lx < Lx - 2:
+            print('{} has inner upper right nneighbors'.format(i))
+            plaq['inner']['n_nearest'][i] += [i + Lx + 2]
+            plaq['inner']['n_nearest'][i + Lx + 2] += [i]
+        elif i % Lx < Lx - 2:
+            plaq['outer']['n_nearest'][i] += [(i + Lx + 2) % N]
+            plaq['outer']['n_nearest'][(i + Lx + 2) % N] += [i]
+        else:
+            plaq['outer']['n_nearest'][i] += [(i + 2 - offset_y * Lx) % N]
+            plaq['outer']['n_nearest'][(i + 2 - offset_y * Lx) % N] += [i]
     return plaq
+
+if __name__ == '__main__':
+    p24_0 = paralellogram(4, 6, offset_y=0)
+    print(test_bonds(p24_0)[0])
+    p24_1 = paralellogram(4, 6, offset_y=1)
+    print(test_bonds(p24_1)[0])
+    p24_2 = paralellogram(4, 6, offset_y=2)
+    print(test_bonds(p24_2)[0])
+    p24_0 = paralellogram(6, 4, offset_y=0)
+    print(test_bonds(p24_0)[0])
+    p24_1 = paralellogram(6, 4, offset_y=1)
+    print(test_bonds(p24_1)[0])
+    p24_2 = paralellogram(4, 6, offset_y=2)
+    print(test_bonds(p24_2)[0])
