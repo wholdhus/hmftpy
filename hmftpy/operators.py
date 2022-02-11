@@ -56,8 +56,6 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False, coeffs={'in
     Hi = quantum_operator({'static': terms}, basis=basis,
                           check_herm=checks, check_symm=checks,
                           dtype=TYPE)
-    if str(Hi) == '':
-        raise Exception('Null operator')
     return Hi
 
 
@@ -109,8 +107,6 @@ def periodic_hamiltonian(plaquette, interactions, basis, verbose=False,
     Hp = quantum_operator({'static': terms}, basis=basis,
                           check_herm=checks, check_symm=checks,
                           dtype=TYPE)
-    if str(Hp) == '':
-        raise Exception('Null operator')
     return Hp
 
 
@@ -153,8 +149,6 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False
             raise Exception('Unknown interaction type {}'.format(n))
     Ho = quantum_operator({'static': terms}, basis=basis, check_herm=checks,
                           check_symm=checks, dtype=TYPE)
-    if str(Ho) == '':
-        raise Exception('Null operator')
     return Ho
 
 

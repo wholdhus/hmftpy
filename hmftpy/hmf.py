@@ -78,7 +78,12 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
     while iter < max_iter and not converged:
         iter += 1
         log('{}th iteration'.format(iter))
-        H = Hi + outer_hamiltonian(plaquette, mf, interactions, basis, coeffs=coeffs, every_other=every_other)
+        Ho = outer_hamiltonian(plaquette, mf, interactions, basis, coeffs=coeffs, every_other=every_other)
+        if str(Ho) == '':
+            log('Warning: mean fields are zero, outer Hamiltonian is null')
+            H = Hi
+        else:
+            H = Hi + Ho
         if n_states < 0:
             e, v = H.eigh()
             es_degen = e[np.abs(e - e[0]) < 5*lanczos_tol]
