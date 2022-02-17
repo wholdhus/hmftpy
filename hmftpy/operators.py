@@ -143,6 +143,7 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False
             for c_op in interactions[n]:
                 coupling = interactions[n][c_op]
                 terms += [[c_op[0], [[coupling*mean_fields[c_op[1]][b[1]], b[0]] for b in plaquette['outer'][n]]]]
+                terms += [[c_op[1], [[coupling*mean_fields[c_op[0]][b[0]], b[1]] for b in plaquette['outer'][n]]]]
         elif n == 'local':
             pass
         else:

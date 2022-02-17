@@ -46,8 +46,11 @@ def get_useful_mf_inds(plaquette, interactions):
 def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
             Hi=None, ops=None, lanczos_tol=10**-16, hmft_tol=10**-13,
             v0_start=False, n_states=1, coeffs={'inner': {}, 'outer': {}},
-            mf_cvg=False, every_other=False):
+            mf_cvg=False, every_other=False,
+            rescale_e=False):
     L = plaquette['L']
+    if 'n_bonds' in interactions or 'x_bonds' in interactions:
+        rescale_e = True
     if Hi is None:
         Hi = inner_hamiltonian(plaquette, interactions, basis, coeffs=coeffs, every_other=every_other)
     if ops is None:
@@ -109,4 +112,6 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
         if cvg < hmft_tol:
             converged = True
     e0 = energies[-1]
+    if rescale_e:
+        e0 = 0.5*(energies[-1] + Hi.expt_value(vs[-1])) # H_in + 0.5*H_out
     return np.real(e0), vs[-1], mf, converged
