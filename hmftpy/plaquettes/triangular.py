@@ -1,3 +1,5 @@
+import numpy as np
+
 def test_bonds(plaquette):
     good = True
     L = plaquette['L']
@@ -61,6 +63,7 @@ plaq3['inner']['z_bonds'] = [[2,0]]
 plaq3['outer']['x_bonds'] = [[1,2], [2,0]]
 plaq3['outer']['y_bonds'] = [[0,1], [2,0]]
 plaq3['outer']['z_bonds'] = [[1,0], [2,1]]
+plaq3['rs'] = np.array([[0,0], [1,0], [0.5, np.sqrt(3)/2]])
 
 """
 Connection diagram for 9 site 'pacman'

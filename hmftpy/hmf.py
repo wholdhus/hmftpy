@@ -45,7 +45,7 @@ def get_useful_mf_inds(plaquette, interactions):
 
 def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
             Hi=None, ops=None, lanczos_tol=10**-16, hmft_tol=10**-13,
-            v0_start=False, n_states=1, coeffs={'inner': {}, 'outer': {}},
+            coeffs={'inner': {}, 'outer': {}},
             mf_cvg=False, every_other=False,
             rescale_e=False):
     L = plaquette['L']
@@ -61,10 +61,7 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
                'z': TYPE(2*(np.random.rand(L) - 0.5))}
     H = Hi + outer_hamiltonian(plaquette, mf0, interactions, basis, coeffs=coeffs, every_other=every_other)
     log('Hamiltonian complete!')
-    if n_states < 0:
-        e, v = H.eigh()
-    else:
-        e, v = H.eigsh(k=n_states, which='SA', tol=lanczos_tol)
+    e, v = H.eigsh(k=1, which='SA', tol=lanczos_tol)
     log('Ground state energy with initial seed')
     log(e[0])
 
@@ -87,14 +84,8 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
             H = Hi
         else:
             H = Hi + Ho
-        if n_states < 0:
-            e, v = H.eigh()
-            es_degen = e[np.abs(e - e[0]) < 5*lanczos_tol]
-            log('Ground state degeneracy: {}'.format(len(es_degen)))
-        else:
-            e, v = H.eigsh(k=n_states, which = 'SA', tol=lanczos_tol, v0=v0) # just finding lowest energies
-        if v0_start:
-            v0 = v[:,0]
+        e, v = H.eigsh(k=1, which = 'SA', tol=lanczos_tol, v0=v0) # just finding lowest energies
+        v0 = v[:,0]
         log('Energy: {}'.format(e[0]))
         mf = get_mfs(v[:,0], ops)
         energies += [e[0]]
