@@ -59,7 +59,7 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False, coeffs={'in
     return Hi
 
 
-def periodic_hamiltonian(plaquette, interactions, basis, verbose=False, 
+def periodic_hamiltonian(plaquette, interactions, basis, verbose=False,
                          coeffs={'inner': {}, 'outer': {}}, every_other=False,
                          checks=False):
     """
@@ -110,7 +110,7 @@ def periodic_hamiltonian(plaquette, interactions, basis, verbose=False,
     return Hp
 
 
-def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False, 
+def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False,
                       coeffs={'inner': {}, 'outer': {}}, every_other=False,
                       checks=False):
     """
@@ -218,3 +218,47 @@ def helicity(triangles, basis):
                           [1, tr[2], tr[0]], [-1, tr[0], tr[2]]]]] # s2 x s3
         ops += [quantum_LinearOperator(op_lst, basis=basis)]
     return ops
+
+
+def initialize_mf_hamiltonian(plaquette, interactions, basis,
+                                 checks=False):
+    L = plaquette['L']
+    terms = {'inner': []}
+    bonds = ['x_bonds', 'y_bonds', 'z_bonds']
+    for n in interactions:
+        if n in bonds:
+            for c_op in interactions[n]:
+                coupling = interactions[n][c_op]
+                for b in plaquette['outer'][n]:
+                    s01 = c_op[0]+str(b[0])+'_'+c_op[1]+str(b[1])
+                    s10 = c_op[1]+str(b[1])+'_'+c_op[0]+str(b[0])
+                    terms[s01] = [[c_op[0], [[coupling, b[0]]]]]
+                    terms[s10] = [[c_op[1], [[coupling, b[1]]]]]
+                for b in plaquette['outer'][n]:
+                    s01 = c_op[0]+str(b[0])+'_'+c_op[1]+str(b[1])
+                    s10 = c_op[1]+str(b[1])+'_'+c_op[0]+str(b[0])
+                    terms[s01] = [[c_op[0], [[coupling, b[0]]]]]
+                    terms[s10] = [[c_op[1], [[coupling, b[1]]]]]
+                terms['inner'] += [[c_op, [[coupling, b[0], b[1]] for b in plaquette['inner'][n]]]]
+        elif n == 'local':
+            for c_op in interactions[n]:
+                couplings = interactions[n][c_op]
+                terms['inner'] += [[c_op, [[couplings[i], i] for i in range(L)]]]
+        else:
+            print('Incorrectly formatted interactions!')
+    H = quantum_operator(terms, basis=basis, check_herm=checks, check_symm=checks, dtype=np.complex128)
+    return H
+
+
+def mf_params(mean_fields, interactions, plaquette):
+    p_dict = {}
+    for n in interactions:
+        if n in ['x_bonds', 'y_bonds', 'z_bonds']:
+            for c_op in interactions[n]:
+                coupling = 1. + 0.j # this will be multiplied times the coupling in the original hamiltonian
+                for b in plaquette['outer'][n]:
+                    s01 = c_op[0]+str(b[0])+'_'+c_op[1]+str(b[1])
+                    s10 = c_op[1]+str(b[1])+'_'+c_op[0]+str(b[0])
+                    p_dict[s01] = coupling*mean_fields[c_op[1]][b[1]]
+                    p_dict[s10] = coupling*mean_fields[c_op[0]][b[0]]
+    return p_dict

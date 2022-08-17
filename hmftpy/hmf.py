@@ -1,7 +1,8 @@
 import numpy as np
 from quspin.basis import spin_basis_1d, tensor_basis
 from quspin.operators import hamiltonian, quantum_operator, quantum_LinearOperator
-from .operators import inner_hamiltonian, outer_hamiltonian, mf_ops
+from operators import inner_hamiltonian, outer_hamiltonian, mf_ops
+from operators import initialize_mf_hamiltonian, mf_params
 
 VERBOSE = False
 TYPE = np.complex128
@@ -106,3 +107,86 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
     if rescale_e:
         e0 = 0.5*(energies[-1] + Hi.expt_value(vs[-1])) # H_in + 0.5*H_out
     return np.real(e0), vs[-1], mf, converged
+
+
+def outer_hamiltonian_params(mean_fields, interactions, plaquette):
+    p_dict = {}
+    for n in interactions:
+        if n in ['x_bonds', 'y_bonds', 'z_bonds']:
+            for c_op in interactions[n]:
+                for b in plaquette['outer'][n]:
+                    s01 = c_op[0]+str(b[0])+'_'+c_op[1]+str(b[1])
+                    s10 = c_op[1]+str(b[1])+'_'+c_op[0]+str(b[0])
+                    p_dict[s01] = mean_fields[c_op[1]][b[1]]
+                    p_dict[s10] = mean_fields[c_op[0]][b[0]]
+    return p_dict
+
+
+def do_hmft_2(plaquette, H, basis, max_iter=100, mf0=None,
+              ops=None, lanczos_tol=10**-16, hmft_tol=10**-13,
+              mf_cvg=False):
+    L = plaquette['L']
+    if ops is None:
+        ops = mf_ops(plaquette, basis)
+    if mf0 is None:
+        mf0 = {'x': TYPE(2*(np.random.rand(L) - 0.5)),
+               'y': TYPE(2*(np.random.rand(L) - 0.5)),
+               'z': TYPE(2*(np.random.rand(L) - 0.5))}
+    params = mf_params(mf0, interactions, plaquette)
+    e, v = H.eigsh(params, k=1, which='SA', tol=lanczos_tol)
+    log('Ground state energy with initial seed')
+    log(e[0])
+
+    energies = [e[0]]
+    vs = [v[:, 0]]
+    mf = get_mfs(vs[0], ops)
+    iter = 0
+    converged = False
+    v0 = None
+
+    if mf_cvg:
+        mf_inds = get_useful_mf_inds(plaquette, interactions)
+
+    while iter < max_iter and not converged:
+        iter += 1
+        log('{}th iteration'.format(iter))
+        params = mf_params(mf, interactions, plaquette)
+        e, v = H.eigsh(params, k=1, which = 'SA', tol=lanczos_tol, v0=v0) # just finding lowest energies
+        v0 = v[:,0]
+        log('Energy: {}'.format(e[0]))
+        mf = get_mfs(v[:,0], ops)
+        energies += [e[0]]
+        vs += [v[:, 0]]
+        if mf_cvg:
+            mf_r = [mf[u][mf_inds[u]] for u in ['x', 'y', 'z']]
+            cvg = 100
+            if iter > 1:
+                cvg = np.sum(np.linalg.norm(mf_r[i] - prev_mf_r[i]) for i in range(3))
+                log('Total distance from previous mean fields')
+                log(cvg)
+            prev_mf_r = mf_r
+        else: # basing convergence on energy
+            cvg = np.abs(energies[iter] - energies[iter-1])
+        if cvg < hmft_tol:
+            converged = True
+    p0 = mf_params({'x': np.zeros(L, dtype=np.complex128),
+                    'y': np.zeros(L, dtype=np.complex128),
+                    'z': np.zeros(L, dtype=np.complex128)},
+                    interactions, plaquette)
+    e0 = 0.5*(energies[-1] + H.expt_value(vs[-1], pars=p0)) # H_in + 0.5*H_out
+    # H_in is the same as the MF hamiltonian with all mean fields set to zero!
+    return np.real(e0), vs[-1], mf, converged
+
+if __name__ == '__main__':
+    from plaquettes.triangular import plaq3
+    basis = spin_basis_1d(3, pauli=0)
+    interactions = {'x_bonds':   {'xx': -1., 'yy': -1., 'zz': -1.},
+                    'y_bonds': {'xx': -1., 'yy': -1., 'zz': -1.},
+                    'z_bonds': {'xx': -1., 'yy': -1., 'zz': -1.}}
+    mf0 = {'x': np.random.rand(3), 'y': np.random.rand(3), 'z': np.random.rand(3)}
+    mfh = initialize_mf_hamiltonian(plaq3, interactions, basis)
+    e, v, mf, cvg = do_hmft_2(plaq3, mfh, basis)
+    print('Complete!')
+    print('Energy: {}'.format(e))
+    print('Converged? ')
+    print(cvg)
