@@ -237,12 +237,7 @@ def initialize_mf_hamiltonian(plaquette, interactions, basis,
                     else:
                         terms[s01] = [[c_op[0], [[coupling, b[0]]]]]
                     if s10 in terms:
-                        print('s10 in terms: ')
-                        print(s10)
-                        print(terms[s10])
                         terms[s10] += [[c_op[1], [[coupling, b[1]]]]]
-                        print('Now:')
-                        print(terms[s10])
                     else:
                         terms[s10] = [[c_op[1], [[coupling, b[1]]]]]
                 terms['inner'] += [[c_op, [[coupling, b[0], b[1]] for b in plaquette['inner'][n]]]]

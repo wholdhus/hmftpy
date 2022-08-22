@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def test_bonds(plaquette):
     good = True
     L = plaquette['L']
@@ -22,6 +23,12 @@ def test_bonds(plaquette):
                     outer_correct[c][i] = False
                     good = False
     return good, inner_correct, outer_correct
+
+
+
+a0 = np.zeros(2)
+a1 = np.array([1., 0.])
+a2 = np.array([0.5, np.sqrt(3)/2])
 
 
 
@@ -63,7 +70,11 @@ plaq3['inner']['z_bonds'] = [[2,0]]
 plaq3['outer']['x_bonds'] = [[1,2], [2,0]]
 plaq3['outer']['y_bonds'] = [[0,1], [2,0]]
 plaq3['outer']['z_bonds'] = [[1,0], [2,1]]
-plaq3['rs'] = np.array([[0,0], [1,0], [0.5, np.sqrt(3)/2]])
+plaq3['rs'] = np.array([a0, a1, a2])
+plaq3['Rs'] = np.array([a0, 2*a2-a1, a2+a1,
+                        -2*a2+a1, -a2-a1,
+                       a2-2*a1, 2*a1-a2])
+plaq3['outline'] = [0, 1, 2, 0]
 
 """
 Connection diagram for 9 site 'pacman'
@@ -358,7 +369,14 @@ plaq12['inner']['z_bonds'] = [[4,0], [5,1], [6,2],
 plaq12['outer']['x_bonds'] = [[2,7], [6,10], [9,0], [11,3]]
 plaq12['outer']['y_bonds'] = [[3,2], [7,6], [10,0], [11,1]]
 plaq12['outer']['z_bonds'] = [[0,6], [1,10], [2,11], [3,9]]
-
+plaq12['rs'] = np.array([a0, a1, 2*a1, 
+                         a2-a1, a2, a2+a1, a2+2*a1,
+                         2*a2-a1, 2*a2, 2*a2+a1,
+                         3*a2-a1, 3*a2
+                         ])
+plaq12['Rs'] = [a0, 2*a1+2*a2, 4*a2-2*a1, 2*a2-4*a1,
+                -2*a2-2*a1, -4*a2+2*a1, 4*a1-2*a2]
+plaq12['outline'] = [0,1,2,6,9,11,10,7,3,0]
 
 """
 Connection diagram for 12 zigzag
