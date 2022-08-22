@@ -7,7 +7,6 @@ from operators import initialize_mf_hamiltonian, mf_params
 VERBOSE = False
 TYPE = np.complex128
 
-
 def log(msg):
     """
     Prints msg only when global variable VERBOSE is true.
@@ -48,19 +47,21 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
             Hi=None, ops=None, lanczos_tol=10**-16, hmft_tol=10**-13,
             coeffs={'inner': {}, 'outer': {}},
             mf_cvg=False, every_other=False,
-            rescale_e=False):
+            rescale_e=True):
     L = plaquette['L']
     if 'n_bonds' in interactions or 'x_bonds' in interactions:
         rescale_e = True
     if Hi is None:
-        Hi = inner_hamiltonian(plaquette, interactions, basis, coeffs=coeffs, every_other=every_other)
+        Hi = inner_hamiltonian(plaquette, interactions, basis,
+                               coeffs=coeffs, every_other=every_other)
     if ops is None:
         ops = mf_ops(plaquette, basis)
     if mf0 is None:
         mf0 = {'x': TYPE(2*(np.random.rand(L) - 0.5)),
                'y': TYPE(2*(np.random.rand(L) - 0.5)),
                'z': TYPE(2*(np.random.rand(L) - 0.5))}
-    H = Hi + outer_hamiltonian(plaquette, mf0, interactions, basis, coeffs=coeffs, every_other=every_other)
+    H = Hi + outer_hamiltonian(plaquette, mf0, interactions, basis,
+                               coeffs=coeffs, every_other=every_other)
     log('Hamiltonian complete!')
     e, v = H.eigsh(k=1, which='SA', tol=lanczos_tol)
     log('Ground state energy with initial seed')
@@ -104,8 +105,10 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
         if cvg < hmft_tol:
             converged = True
     e0 = energies[-1]
+    print(e0)
     if rescale_e:
-        e0 = 0.5*(energies[-1] + Hi.expt_value(vs[-1])) # H_in + 0.5*H_out
+        Ho = outer_hamiltonian(plaquette, mf, interactions, basis, coeffs=coeffs, every_other=every_other)
+        e0 = 0.5*(Ho+Hi+Hi).expt_value(vs[-1]) # H_in + 0.5*H_out
     return np.real(e0), vs[-1], mf, converged
 
 
@@ -122,7 +125,7 @@ def outer_hamiltonian_params(mean_fields, interactions, plaquette):
     return p_dict
 
 
-def do_hmft_2(plaquette, H, basis, max_iter=100, mf0=None,
+def do_hmft_2(plaquette, H, interactions, basis, max_iter=100, mf0=None,
               ops=None, lanczos_tol=10**-16, hmft_tol=10**-13,
               mf_cvg=False):
     L = plaquette['L']
@@ -154,9 +157,9 @@ def do_hmft_2(plaquette, H, basis, max_iter=100, mf0=None,
         e, v = H.eigsh(params, k=1, which = 'SA', tol=lanczos_tol, v0=v0) # just finding lowest energies
         v0 = v[:,0]
         log('Energy: {}'.format(e[0]))
-        mf = get_mfs(v[:,0], ops)
+        mf = get_mfs(v0, ops)
         energies += [e[0]]
-        vs += [v[:, 0]]
+        vs += [v0]
         if mf_cvg:
             mf_r = [mf[u][mf_inds[u]] for u in ['x', 'y', 'z']]
             cvg = 100
@@ -173,19 +176,52 @@ def do_hmft_2(plaquette, H, basis, max_iter=100, mf0=None,
                     'y': np.zeros(L, dtype=np.complex128),
                     'z': np.zeros(L, dtype=np.complex128)},
                     interactions, plaquette)
-    e0 = 0.5*(energies[-1] + H.expt_value(vs[-1], pars=p0)) # H_in + 0.5*H_out
+    params = mf_params(mf, interactions, plaquette)
+    Hi = inner_hamiltonian(plaquette, interactions, basis)
+    e0 = 0.5*(Hi.expt_value(vs[-1]) + H.expt_value(vs[-1], pars=params))
+    # e0 = 0.5*(energies[-1] + H.expt_value(vs[-1], pars=p0)) # H_in + 0.5*H_out
+    print(energies[-1])
     # H_in is the same as the MF hamiltonian with all mean fields set to zero!
     return np.real(e0), vs[-1], mf, converged
 
 if __name__ == '__main__':
     from plaquettes.triangular import plaq3
+    import time
     basis = spin_basis_1d(3, pauli=0)
-    interactions = {'x_bonds':   {'xx': -1., 'yy': -1., 'zz': -1.},
-                    'y_bonds': {'xx': -1., 'yy': -1., 'zz': -1.},
-                    'z_bonds': {'xx': -1., 'yy': -1., 'zz': -1.}}
-    mf0 = {'x': np.random.rand(3), 'y': np.random.rand(3), 'z': np.random.rand(3)}
+    interactions = {'x_bonds': {'xx': -1., 'yy': -1., 'zz': -1},
+                    'y_bonds': {'xx': -1., 'yy': -1., 'zz': -1},
+                    'z_bonds': {'xx': -1., 'yy': -1., 'zz': -1}}
+    mf0 = {'x': (np.random.rand(3)-.5), 'y': (np.random.rand(3)-.5), 'z': (np.random.rand(3)-.5)}
+    # mf0 = {'x': np.zeros(3), 'y': np.zeros(3), 'z': np.ones(3)*.5}
+    mf0p = outer_hamiltonian_params(mf0, interactions, plaq3)
     mfh = initialize_mf_hamiltonian(plaq3, interactions, basis)
-    e, v, mf, cvg = do_hmft_2(plaq3, mfh, basis)
+
+    e1, v1 = mfh.eigh(pars=mf0p)
+    print(e1)
+
+    hi = inner_hamiltonian(plaq3, interactions, basis)
+    ho = outer_hamiltonian(plaq3, mf0, interactions, basis)
+    e2, v2 = (ho+hi).eigh()
+    print(e2)
+
+    print('')
+
+    print('New method: ')
+    tic = time.time()
+    e, v, mf, cvg = do_hmft_2(plaq3, mfh, interactions, basis)
+    toc = time.time()
+    print('That took {} seconds'.format(toc-tic))
+    print('Complete!')
+    print('Energy: {}'.format(e))
+    print('Converged? ')
+    print(cvg)
+
+    print('')
+    print('Old method: ')
+    tic = time.time()
+    e, v, mf, cvg = do_hmft(plaq3, interactions, basis, mf0=mf0)
+    toc = time.time()
+    print('That took {} seconds'.format(toc-tic))
     print('Complete!')
     print('Energy: {}'.format(e))
     print('Converged? ')
