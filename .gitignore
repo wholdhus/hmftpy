@@ -1,3 +1,4 @@
+*.png
 .ipynb*
 __pycache__/
 /hmftpy/__pychache__/

@@ -30,8 +30,8 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False, coeffs={'in
     """
     terms = []
     L = plaquette['L']
-    neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
-    bonds = ['x_bonds', 'y_bonds', 'z_bonds']
+    neighbors = ['nearest', 'n_nearest', 'n_n_nearest', 'n3_nearest', 'n4_nearest', 'n5_nearest', 'n6_nearest', 'n7_nearest']
+    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds', 'a_bonds', 'b_bonds']
     for n in interactions:
         if n == 'local':
             for c_op in interactions[n]:
@@ -54,7 +54,7 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False, coeffs={'in
         else:
             raise Exception('Unknown interaction type {}'.format(n))
     Hi = quantum_operator({'static': terms}, basis=basis,
-                          check_herm=checks, check_symm=checks,
+                          check_herm=checks, check_symm=checks, check_pcon=checks,
                           dtype=TYPE)
     return Hi
 
@@ -77,7 +77,7 @@ def periodic_hamiltonian(plaquette, interactions, basis, verbose=False,
     terms = []
     L = plaquette['L']
     neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
-    bonds = ['x_bonds', 'y_bonds', 'z_bonds']
+    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds', 'a_bonds', 'b_bonds']
     for n in interactions:
         if n == 'local':
             for c_op in interactions[n]:
@@ -105,7 +105,7 @@ def periodic_hamiltonian(plaquette, interactions, basis, verbose=False,
         else:
             raise Exception('Unknown interaction type {}'.format(n))
     Hp = quantum_operator({'static': terms}, basis=basis,
-                          check_herm=checks, check_symm=checks,
+                          check_herm=checks, check_symm=checks, check_pcon=checks,
                           dtype=TYPE)
     return Hp
 
@@ -128,7 +128,7 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False
     L = plaquette['L']
     terms = []
     neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
-    bonds = ['x_bonds', 'y_bonds', 'z_bonds']
+    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds', 'a_bonds', 'b_bonds']
     for n in interactions:
         if n in neighbors:
             for c_op in interactions[n]:
@@ -150,10 +150,29 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False
             raise Exception('Unknown interaction type {}'.format(n))
     Ho = quantum_operator({'static': terms}, basis=basis, check_herm=checks,
                           check_symm=checks, dtype=TYPE)
+    # if str(Ho) == '':
+        # raise Exception('Null operator')
+    return Ho
+
+def outer_z_hamiltonian(plaquette, mean_fields, interactions, basis,
+                        checks=False):
+    L = plaquette['L']
+    terms = []
+    neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
+    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds']
+    for i in range(L):
+        if 'nearest' in interactions:
+            terms += [['z', [[interactions['nearest']['zz']*mean_fields['z'][n], i] for n in plaquette['outer']['nearest'][i]]]]
+        if 'n_nearest' in interactions:
+            terms += [['z', [[interactions['nearest']['zz']*mean_fields['z'][n], i] for n in plaquette['outer']['nearest'][i]]]]
+    Ho = quantum_operator({'static': terms}, basis=basis, check_herm=checks,
+                          check_symm=checks, dtype=TYPE)
+    # if str(Ho) == '':
+        # raise Exception('Null operator')
     return Ho
 
 
-def mf_ops(plaquette, basis):
+def get_mf_ops(plaquette, basis):
     """
     Constructs a dict of QuSpin quantum operators for all components of spin on
         each site of the cluster

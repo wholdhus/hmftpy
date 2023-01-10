@@ -20,9 +20,9 @@ def get_mfs(v, mf_ops):
     ymfs = np.zeros(L, dtype=TYPE)
     zmfs = np.zeros(L, dtype=TYPE)
     for i in range(L):
-        xmfs[i] = mf_ops[i]['x'].matrix_ele(v, v)
-        ymfs[i] = mf_ops[i]['y'].matrix_ele(v, v)
-        zmfs[i] = mf_ops[i]['z'].matrix_ele(v, v)
+        xmfs[i] = mf_ops[i]['x'].expt_value(v)
+        ymfs[i] = mf_ops[i]['y'].expt_value(v)
+        zmfs[i] = mf_ops[i]['z'].expt_value(v)
     mfs = {'x': xmfs, 'y': ymfs, 'z': zmfs}
     return mfs
 
@@ -39,7 +39,7 @@ def get_useful_mf_inds(plaquette, interactions):
                         if c_op[1] == u:
                             good_inds[u] += neighbors
     for u in ['x', 'y', 'z']:
-        good_inds[u]= list(set(good_inds[u]))
+        good_inds[u] = list(set(good_inds[u]))
     return good_inds
 
 
@@ -55,7 +55,7 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
         Hi = inner_hamiltonian(plaquette, interactions, basis,
                                coeffs=coeffs, every_other=every_other)
     if ops is None:
-        ops = mf_ops(plaquette, basis)
+        ops = get_mf_ops(plaquette, basis)
     if mf0 is None:
         mf0 = {'x': TYPE(2*(np.random.rand(L) - 0.5)),
                'y': TYPE(2*(np.random.rand(L) - 0.5)),
@@ -67,13 +67,11 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
     log('Ground state energy with initial seed')
     log(e[0])
 
-    energies = [e[0]]
-    vs = [v[:, 0]]
-    mf = get_mfs(vs[0], ops)
-    iter = 0
+    energies = []
+    vs = []
+    mf = mf0
+    it = 0
     converged = False
-    v0 = None
-
     if mf_cvg:
         mf_inds = get_useful_mf_inds(plaquette, interactions)
 
@@ -89,21 +87,24 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
         e, v = H.eigsh(k=1, which = 'SA', tol=lanczos_tol, v0=v0) # just finding lowest energies
         v0 = v[:,0]
         log('Energy: {}'.format(e[0]))
-        mf = get_mfs(v[:,0], ops)
+        mf = get_mfs(v[:, 0], ops)
         energies += [e[0]]
         vs += [v[:, 0]]
-        if mf_cvg:
-            mf_r = [mf[u][mf_inds[u]] for u in ['x', 'y', 'z']]
-            cvg = 100
-            if iter > 1:
-                cvg = np.sum(np.linalg.norm(mf_r[i] - prev_mf_r[i]) for i in range(3))
-                log('Total distance from previous mean fields')
-                log(cvg)
-            prev_mf_r = mf_r
-        else: # basing convergence on energy
-            cvg = np.abs(energies[iter] - energies[iter-1])
+        cvg = 999
+        if it > 0:
+            if mf_cvg:
+                mf_r = [mf[u][mf_inds[u]] for u in ['x', 'y', 'z']]
+                if it > 1:
+                    cvg = np.sum([np.linalg.norm(mf_r[i] - prev_mf_r[i])
+                                  for i in range(3)])
+                    log('Total distance from previous mean fields')
+                    log(cvg)
+                prev_mf_r = mf_r
+            else: # basing convergence on energy
+                cvg = np.abs(energies[it] - energies[it-1])
         if cvg < hmft_tol:
             converged = True
+        it += 1
     e0 = energies[-1]
     if rescale_e:
         Ho = outer_hamiltonian(plaquette, mf, interactions, basis, coeffs=coeffs, every_other=every_other)
