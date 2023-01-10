@@ -1,6 +1,6 @@
-*.png
 .ipynb*
 __pycache__/
 /hmftpy/__pychache__/
 /hmftpy/plaquettes/__pychache__/
 *.png
+.DS_Store
