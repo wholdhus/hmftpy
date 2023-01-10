@@ -105,7 +105,6 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
         if cvg < hmft_tol:
             converged = True
     e0 = energies[-1]
-    print(e0)
     if rescale_e:
         Ho = outer_hamiltonian(plaquette, mf, interactions, basis, coeffs=coeffs, every_other=every_other)
         e0 = 0.5*(Ho+Hi+Hi).expt_value(vs[-1]) # H_in + 0.5*H_out
@@ -179,9 +178,7 @@ def do_hmft_2(plaquette, H, interactions, basis, max_iter=100, mf0=None,
     params = mf_params(mf, interactions, plaquette)
     Hi = inner_hamiltonian(plaquette, interactions, basis)
     e0 = 0.5*(Hi.expt_value(vs[-1]) + H.expt_value(vs[-1], pars=params))
-    # e0 = 0.5*(energies[-1] + H.expt_value(vs[-1], pars=p0)) # H_in + 0.5*H_out
-    print(energies[-1])
-    # H_in is the same as the MF hamiltonian with all mean fields set to zero!
+
     return np.real(e0), vs[-1], mf, converged
 
 if __name__ == '__main__':
