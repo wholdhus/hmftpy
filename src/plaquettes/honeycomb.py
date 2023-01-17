@@ -1,5 +1,5 @@
 """
-Connection diagram for 6 site
+6-site hexagonal cluster
        <1>     <0>
          \     /
           4 - 5
@@ -9,7 +9,6 @@ Connection diagram for 6 site
           0 - 1
          /     \
        <5>     <4>
-
 """
 plaq6 = {'L': 6, 'inner': {}, 'outer': {}}
 plaq6['inner']['nearest'] = [
