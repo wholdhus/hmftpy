@@ -35,25 +35,50 @@ plaq3['Rs'] = [ax+a1, a1+a2] # superlattice basis vectors
 
 """
 Connection diagram for 7 site
+       5 - 6
+      / \ / \
+     2 - 3 - 4
+      \ / \ /
+       0 - 1
 
-       5 - 6 -<0>
-      / \ / \ / \
-     2 - 3 - 4 -<5>
-      \ / \ / \ /
-       0 - 1 -<2>
-        \ / \ /
-        <5>-<6>
 """
 plaq7 = {'L': 7,
          'inner': {},
          'outer': {}}
-plaq7['inner']['n_bonds'] = [[0,1], [2,3], [3,4], [5,6],
-                             [0,3], [1,4], [2,5], [3,6],
-                             [0,2], [1,3], [3,5], [4,6]]
-plaq7['inner']['nn_bonds'] = [[0,4], [2,6],
-                              [0,5], [1,6],
-                              [1,2], [4,6]]
-plaq7['outer']['n_bonds'] =
+plaq7['outline'] = [np.array([0, 1, 1.5, 1, 0, -.5, 0]),
+                     np.array([0, 0, az, 2*az, 2*az, az, 0])]
+plaq7['rs'] = [np.array([0, 1, -.5, .5, 1.5, 0, 1]),
+                np.array([0, 0, az, az, az, 2*az, 2*az])]
+plaq7['inner']['nearest'] = [[1,3,2],
+                    [4,3,0],
+                    [0,3,5],
+                    [0,1,2,4,5,6],
+                    [6,3,1],
+                    [2,3,6],
+                    [5,3,4]]
+plaq7['inner']['n_nearest'] = [[4,5],
+                     [6,2],
+                     [1,6],
+                     [],
+                     [5,0],
+                     [0,4],
+                     [2,1]]
+plaq7['inner']['n_n_nearest'] = [[6],
+                      [5],
+                      [4],
+                      [],
+                      [2],
+                      [1],
+                      [0]]
+sites = np.arange(7)
+plaq7['outer']['nearest'] = [sites[[s2 not in np.append(plaq7['inner']['nearest'][s], s) for s2 in sites]] for s in sites]
+plaq7['outer']['n_nearest'] = [sites[[s2 not in np.append(plaq7['inner']['n_nearest'][s], s) for s2 in sites]] for s in sites]
+plaq7['outer']['n_n_nearest'] = [sites[[s2 not in np.append(plaq7['inner']['n_n_nearest'][s], s) for s2 in sites]] for s in sites]
+plaq7['inner']['n3_nearest'] = [[] for i in range(12)]
+plaq7['inner']['n4_nearest'] = [[] for i in range(12)]
+plaq7['inner']['n5_nearest'] = [[] for i in range(12)]
+plaq7['inner']['n6_nearest'] = [[] for i in range(12)]
+plaq7['inner']['n7_nearest'] = [[] for i in range(12)]
 
 """
 Connection diagram for 12 site truncated triangle
@@ -98,6 +123,117 @@ plaq12['outer']['nn_bonds'] = [
             [9,10], [9,4], [9,2],
             [10,2], [10,4], [10,9], [10,2],
             [11,0], [11,7], [11,5], [11,0]]
+plaq12['inner']['nearest'] = [
+            [1,3,4], # 0
+            [0,2,4,5],
+            [1,5,6], # 2
+            [0,4,7],
+            [0,1,3,5,7,8], # 4
+            [1,2,4,6,8,9],
+            [2,5,9], # 6
+            [3,4,8,10],
+            [4,5,7,9,10,11], # 8
+            [5,6,8,11],
+            [7,8,11], # 10
+            [8,9,10]
+            ]
+plaq12['inner']['n_nearest'] = [
+            [5,7], # 0
+            [3,6,8],
+            [4,9], # 2
+            [1,8],
+            [2,9,10], # 4
+            [0,7,11],
+            [1,8], # 6
+            [0,5,11],
+            [1,3,6], # 8
+            [2,4,10],
+            [4,9], # 10
+            [5,7]]
+plaq12['inner']['n_n_nearest'] = [
+            [2,8], # 0
+            [7,9],
+            [0,8], # 2
+            [5,10],
+            [6,11], # 4
+            [3,10],
+            [4,11], # 6
+            [1,9],
+            [0,2], # 8
+            [1,7],
+            [3,5], # 10
+            [4,6]]
+plaq12['inner']['n3_nearest'] = [
+            [6,9,10], # 0
+            [10,11],
+            [3,7,11], # 2
+            [2,9,11],
+            [], # 4
+            [],
+            [0,7,10], # 6
+            [2,6],
+            [], # 8
+            [0,3],
+            [0,1,6], # 10
+            [1,2,3]]
+plaq12['inner']['n4_nearest'] = [
+            [11], # 0
+            [],
+            [10], # 2
+            [6],
+            [], # 4
+            [],
+            [3], # 6
+            [],
+            [], # 8
+            [],
+            [2], # 10
+            [0]]
+plaq12['inner']['n5_nearest'] = [[] for i in range(12)]
+plaq12['inner']['n6_nearest'] = [[] for i in range(12)]
+plaq12['inner']['n7_nearest'] = [[] for i in range(12)]
+
+plaq12['outer']['nearest'] = [
+            [6,9,10],
+            [10,11],
+            [3,7,11],
+            [2,9,11],
+            [],
+            [],
+            [0,7,10],
+            [2,6],
+            [],
+            [0,3],
+            [0,1,6],
+            [1,2,3]
+            ]
+plaq12['outer']['n_nearest'] = [
+            [5,7,11,11], # 0
+            [3,6,8],
+            [4,9,10,10], # 2
+            [1,6,6,8],
+            [2,9,10], # 4
+            [0,7,11],
+            [1,3,3,8], # 6
+            [0,5,11],
+            [1,3,6], # 8
+            [2,4,10],
+            [2,2,4,9], # 10
+            [0,0,5,7]]
+plaq12['outer']['n_n_nearest'] = [
+            [2,2,8,8],
+            [7,7,9,9],
+            [0,0,8,8],
+            [5,5,10,10],
+            [6,6,11,11],
+            [3,3,10,10],
+            [4,4,11,11],
+            [1,1,9,9],
+            [0,0,2,2],
+            [1,1,7,7],
+            [3,3,5,5],
+            [4,4,6,6]]
+
 plaq12['rs'] = [np.array([0, 1, 2, -.5, .5, 1.5, 2.5, 0, 1, 2, .5, 1.5]),
                 np.array([0, 0, 0, az, az, az, az, 2*az, 2*az, 2*az, 3*az, 3*az])]
 plaq12['vs'] = [np.array([3, 2*az]), np.array([0, 4*az])]
