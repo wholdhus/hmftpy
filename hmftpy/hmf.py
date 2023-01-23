@@ -1,5 +1,5 @@
 import numpy as np
-from quspin.basis import spin_basis_1d, tensor_basis
+from quspin.basis import spin_basis_1d
 from quspin.operators import hamiltonian, quantum_operator, quantum_LinearOperator
 from .operators import inner_hamiltonian, outer_hamiltonian, mf_ops
 from .operators import initialize_mf_hamiltonian, mf_params
@@ -46,39 +46,36 @@ def get_useful_mf_inds(plaquette, interactions):
 def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
             Hi=None, ops=None, lanczos_tol=10**-16, hmft_tol=10**-13,
             coeffs={'inner': {}, 'outer': {}},
-            mf_cvg=False, every_other=False,
-            rescale_e=True):
+            mf_cvg=False, v0=None):
     L = plaquette['L']
-    if 'n_bonds' in interactions or 'x_bonds' in interactions:
-        rescale_e = True
     if Hi is None:
         Hi = inner_hamiltonian(plaquette, interactions, basis,
-                               coeffs=coeffs, every_other=every_other)
+                               coeffs=coeffs)
     if ops is None:
-        ops = get_mf_ops(plaquette, basis)
+        ops = mf_ops(plaquette, basis)
     if mf0 is None:
         mf0 = {'x': TYPE(2*(np.random.rand(L) - 0.5)),
                'y': TYPE(2*(np.random.rand(L) - 0.5)),
                'z': TYPE(2*(np.random.rand(L) - 0.5))}
     H = Hi + outer_hamiltonian(plaquette, mf0, interactions, basis,
-                               coeffs=coeffs, every_other=every_other)
+                               coeffs=coeffs)
     log('Hamiltonian complete!')
-    e, v = H.eigsh(k=1, which='SA', tol=lanczos_tol)
+    e, v = H.eigsh(k=1, which='SA', tol=lanczos_tol, v0=v0)
+    v0 = v[:,0]
     log('Ground state energy with initial seed')
     log(e[0])
 
     energies = []
     vs = []
     mf = mf0
-    it = 0
+    iter = 0
     converged = False
     if mf_cvg:
         mf_inds = get_useful_mf_inds(plaquette, interactions)
 
     while iter < max_iter and not converged:
-        iter += 1
         log('{}th iteration'.format(iter))
-        Ho = outer_hamiltonian(plaquette, mf, interactions, basis, coeffs=coeffs, every_other=every_other)
+        Ho = outer_hamiltonian(plaquette, mf, interactions, basis, coeffs=coeffs)
         if str(Ho) == '':
             log('Warning: mean fields are zero, outer Hamiltonian is null')
             H = Hi
@@ -91,31 +88,29 @@ def do_hmft(plaquette, interactions, basis, max_iter=100, mf0=None,
         energies += [e[0]]
         vs += [v[:, 0]]
         cvg = 999
-        if it > 0:
+        if iter > 0:
             if mf_cvg:
                 mf_r = [mf[u][mf_inds[u]] for u in ['x', 'y', 'z']]
-                if it > 1:
+                if iter > 1:
                     cvg = np.sum([np.linalg.norm(mf_r[i] - prev_mf_r[i])
                                   for i in range(3)])
                     log('Total distance from previous mean fields')
                     log(cvg)
                 prev_mf_r = mf_r
             else: # basing convergence on energy
-                cvg = np.abs(energies[it] - energies[it-1])
+                cvg = np.abs(energies[iter] - energies[iter-1])
         if cvg < hmft_tol:
             converged = True
-        it += 1
-    e0 = energies[-1]
-    if rescale_e:
-        Ho = outer_hamiltonian(plaquette, mf, interactions, basis, coeffs=coeffs, every_other=every_other)
-        e0 = 0.5*(Ho+Hi+Hi).expt_value(vs[-1]) # H_in + 0.5*H_out
+        iter += 1
+    Ho = outer_hamiltonian(plaquette, mf, interactions, basis, coeffs=coeffs)
+    e0 = 0.5*(Ho+Hi+Hi).expt_value(vs[-1]) # H_in + 0.5*H_out
     return np.real(e0), vs[-1], mf, converged
 
 
 def outer_hamiltonian_params(mean_fields, interactions, plaquette):
     p_dict = {}
     for n in interactions:
-        if n in ['x_bonds', 'y_bonds', 'z_bonds']:
+        if n in ['n_bonds', 'nn_bonds']:
             for c_op in interactions[n]:
                 for b in plaquette['outer'][n]:
                     s01 = c_op[0]+str(b[0])+'_'+c_op[1]+str(b[1])
@@ -163,7 +158,7 @@ def do_hmft_2(plaquette, H, interactions, basis, max_iter=100, mf0=None,
         if mf_cvg:
             mf_r = [mf[u][mf_inds[u]] for u in ['x', 'y', 'z']]
             cvg = 100
-            if iter > 1:
+            if iter > 0:
                 cvg = np.sum(np.linalg.norm(mf_r[i] - prev_mf_r[i]) for i in range(3))
                 log('Total distance from previous mean fields')
                 log(cvg)
@@ -183,30 +178,18 @@ def do_hmft_2(plaquette, H, interactions, basis, max_iter=100, mf0=None,
     return np.real(e0), vs[-1], mf, converged
 
 if __name__ == '__main__':
-    from plaquettes.triangular import plaq3
+    from plaquettes.triangular import plaq12
     import time
-    basis = spin_basis_1d(3, pauli=0)
-    interactions = {'x_bonds': {'xx': -1., 'yy': -1., 'zz': -1},
-                    'y_bonds': {'xx': -1., 'yy': -1., 'zz': -1},
-                    'z_bonds': {'xx': -1., 'yy': -1., 'zz': -1}}
-    mf0 = {'x': (np.random.rand(3)-.5), 'y': (np.random.rand(3)-.5), 'z': (np.random.rand(3)-.5)}
-    # mf0 = {'x': np.zeros(3), 'y': np.zeros(3), 'z': np.ones(3)*.5}
-    mf0p = outer_hamiltonian_params(mf0, interactions, plaq3)
-    mfh = initialize_mf_hamiltonian(plaq3, interactions, basis)
-
-    e1, v1 = mfh.eigh(pars=mf0p)
-    print(e1)
-
-    hi = inner_hamiltonian(plaq3, interactions, basis)
-    ho = outer_hamiltonian(plaq3, mf0, interactions, basis)
-    e2, v2 = (ho+hi).eigh()
-    print(e2)
-
-    print('')
+    basis = spin_basis_1d(12, pauli=0)
+    interactions = {'n_bonds': {'xx': 1., 'yy': 1., 'zz': 1.},
+                    'nn_bonds': {'xx': 0.1, 'yy': 0.1, 'zz': 0.1}}
+    mf0 = {'x': (np.random.rand(12)-.5), 'y': (np.random.rand(12)-.5), 'z': (np.random.rand(12)-.5)}
+    mf0p = outer_hamiltonian_params(mf0, interactions, plaq12)
+    mfh = initialize_mf_hamiltonian(plaq12, interactions, basis)
 
     print('New method: ')
     tic = time.time()
-    e, v, mf, cvg = do_hmft_2(plaq3, mfh, interactions, basis)
+    e, v, mf, cvg = do_hmft_2(plaq12, mfh, interactions, basis, mf0=mf0)
     toc = time.time()
     print('That took {} seconds'.format(toc-tic))
     print('Complete!')
@@ -217,7 +200,7 @@ if __name__ == '__main__':
     print('')
     print('Old method: ')
     tic = time.time()
-    e, v, mf, cvg = do_hmft(plaq3, interactions, basis, mf0=mf0)
+    e, v, mf, cvg = do_hmft(plaq12, interactions, basis, mf0=mf0)
     toc = time.time()
     print('That took {} seconds'.format(toc-tic))
     print('Complete!')

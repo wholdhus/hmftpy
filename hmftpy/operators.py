@@ -15,7 +15,7 @@ def get_r(L, coeffs, n, c_op):
     else:
         return np.ones((L, L))
 
-def inner_hamiltonian(plaquette, interactions, basis, verbose=False, coeffs={'inner': {}, 'outer': {}}, every_other=False,
+def inner_hamiltonian(plaquette, interactions, basis, verbose=False, coeffs={'inner': {}, 'outer': {}},
                       checks=False):
     """
     Constructs a QuSpin quantum_operator corresponding to the inner-cluster
@@ -30,7 +30,6 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False, coeffs={'in
     """
     terms = []
     L = plaquette['L']
-    neighbors = ['nearest', 'n_nearest', 'n_n_nearest', 'n3_nearest', 'n4_nearest', 'n5_nearest', 'n6_nearest', 'n7_nearest']
     bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds', 'a_bonds', 'b_bonds']
     for n in interactions:
         if n == 'local':
@@ -38,15 +37,6 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False, coeffs={'in
                 r = get_r(L, coeffs['inner'], n, c_op)
                 couplings = interactions[n][c_op]*r
                 terms += [[c_op, [[couplings[i], i] for i in range(L)]]]
-        elif n in neighbors:
-            for c_op in interactions[n]:
-                coupling = interactions[n][c_op]
-                r_in = get_r(L, coeffs['inner'], n, c_op)
-                for i in range(L):
-                    i_neighbors = np.array(plaquette['inner'][n][i])
-                    if every_other:
-                        i_neighbors = i_neighbors[i_neighbors < i]
-                    terms += [[c_op, [[coupling*r_in[i, ni], i, ni] for ni in i_neighbors]]]
         elif n in bonds:
             for c_op in interactions[n]:
                 coupling = interactions[n][c_op]
@@ -60,7 +50,7 @@ def inner_hamiltonian(plaquette, interactions, basis, verbose=False, coeffs={'in
 
 
 def periodic_hamiltonian(plaquette, interactions, basis, verbose=False,
-                         coeffs={'inner': {}, 'outer': {}}, every_other=False,
+                         coeffs={'inner': {}, 'outer': {}},
                          checks=False):
     """
     Constructs a QuSpin quantum_operator corresponding to the cluster
@@ -76,7 +66,6 @@ def periodic_hamiltonian(plaquette, interactions, basis, verbose=False,
     di = 0
     terms = []
     L = plaquette['L']
-    neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
     bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds', 'a_bonds', 'b_bonds']
     for n in interactions:
         if n == 'local':
@@ -84,19 +73,6 @@ def periodic_hamiltonian(plaquette, interactions, basis, verbose=False,
                 r = get_r(L, coeffs['inner'], n, c_op)
                 couplings = interactions[n][c_op]*r
                 terms += [[c_op, [[couplings[i], i] for i in range(L)]]]
-        elif n in neighbors:
-            for c_op in interactions[n]:
-                coupling = interactions[n][c_op]
-                r_in = get_r(L, coeffs['inner'], n, c_op)
-                r_out = get_r(L, coeffs['outer'], n, c_op)
-                for i in range(L):
-                    i_neighbors = np.array(plaquette['inner'][n][i])
-                    o_neighbors = np.array(plaquette['outer'][n][i])
-                    if every_other:
-                        i_neighbors = i_neighbors[i_neighbors < i]
-                        o_neighbors = o_neighbors[o_neighbors < i]
-                    terms += [[c_op, [[coupling*r_in[i,ni], i, ni] for ni in i_neighbors]]]
-                    terms += [[c_op, [[coupling*r_out[i,ni], i, ni] for ni in o_neighbors]]]
         elif n in bonds:
             for c_op in interactions[n]:
                 coupling = interactions[n][c_op]
@@ -111,7 +87,7 @@ def periodic_hamiltonian(plaquette, interactions, basis, verbose=False,
 
 
 def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False,
-                      coeffs={'inner': {}, 'outer': {}}, every_other=False,
+                      coeffs={'inner': {}, 'outer': {}},
                       checks=False):
     """
     Constructs a QuSpin quantum_operator corresponding to the cluster-bath
@@ -130,16 +106,7 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False
     neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
     bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds', 'a_bonds', 'b_bonds']
     for n in interactions:
-        if n in neighbors:
-            for c_op in interactions[n]:
-                r_out = get_r(L, coeffs['outer'], n, c_op)
-                coupling = interactions[n][c_op]
-                for i in range(L):
-                    o_neighbors = np.array(plaquette['outer'][n][i])
-                    if every_other:
-                        o_neighbors = o_neighbors[o_neighbors < i]
-                    terms += [[c_op[1], [[coupling*mean_fields[c_op[0]][ni]*r_out[i,ni], i] for ni in o_neighbors]]]
-        elif n in bonds:
+        if n in bonds:
             for c_op in interactions[n]:
                 coupling = interactions[n][c_op]
                 terms += [[c_op[0], [[coupling*mean_fields[c_op[1]][b[1]], b[0]] for b in plaquette['outer'][n]]]]
@@ -150,25 +117,6 @@ def outer_hamiltonian(plaquette, mean_fields, interactions, basis, verbose=False
             raise Exception('Unknown interaction type {}'.format(n))
     Ho = quantum_operator({'static': terms}, basis=basis, check_herm=checks,
                           check_symm=checks, dtype=TYPE)
-    # if str(Ho) == '':
-        # raise Exception('Null operator')
-    return Ho
-
-def outer_z_hamiltonian(plaquette, mean_fields, interactions, basis,
-                        checks=False):
-    L = plaquette['L']
-    terms = []
-    neighbors = ['nearest', 'n_nearest', 'n_n_nearest']
-    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds']
-    for i in range(L):
-        if 'nearest' in interactions:
-            terms += [['z', [[interactions['nearest']['zz']*mean_fields['z'][n], i] for n in plaquette['outer']['nearest'][i]]]]
-        if 'n_nearest' in interactions:
-            terms += [['z', [[interactions['nearest']['zz']*mean_fields['z'][n], i] for n in plaquette['outer']['nearest'][i]]]]
-    Ho = quantum_operator({'static': terms}, basis=basis, check_herm=checks,
-                          check_symm=checks, dtype=TYPE)
-    # if str(Ho) == '':
-        # raise Exception('Null operator')
     return Ho
 
 
@@ -197,53 +145,11 @@ def mf_ops(plaquette, basis):
     return ops
 
 
-
-def n_nearest_magnetization(sublattices, basis, dir=(1,0,0)):
-    ops = []
-    for subl in sublattices:
-        op_lst = [['x', [[dir[0], i] for i in subl]],
-                  ['y', [[dir[1], i] for i in subl]],
-                  ['z', [[dir[2], i] for i in subl]]]
-        ops += [quantum_LinearOperator(op_lst, basis=basis)]
-    return ops
-
-def n_n_nearest_magnetization(sublattices, basis, dir=(1,0,0)):
-    ops = []
-    for subl in sublattices:
-        op_lst = [['x', [[dir[0], i] for i in subl]],
-                  ['y', [[dir[1], i] for i in subl]],
-                  ['z', [[dir[2], i] for i in subl]]]
-        ops += [quantum_LinearOperator(op_lst, basis=basis)]
-    return ops
-
-
-def stripe_magnetization(stripes, basis, dir=(1,0,0)):
-    ops = []
-    for st in stripes:
-        op_lst = [['x', [[dir[0], i] for i in st]],
-                  ['y', [[dir[1], i] for i in st]],
-                  ['z', [[dir[2], i] for i in st]]]
-        ops += [quantum_LinearOperator(op_lst, basis=basis)]
-    return ops
-
-
-def helicity(triangles, basis):
-    # specific to 12 site for now
-    # doing z projection for now
-    ops = []
-    for tr in triangles:
-        op_lst = [['xy', [[1, tr[0], tr[1]], [-1, tr[1], tr[0]], # s0 x s1
-                          [1, tr[1], tr[2]], [-1, tr[2], tr[1]], # s1 x s2,
-                          [1, tr[2], tr[0]], [-1, tr[0], tr[2]]]]] # s2 x s3
-        ops += [quantum_LinearOperator(op_lst, basis=basis)]
-    return ops
-
-
 def initialize_mf_hamiltonian(plaquette, interactions, basis,
                                  checks=False):
     L = plaquette['L']
     terms = {'inner': []}
-    bonds = ['x_bonds', 'y_bonds', 'z_bonds']
+    bonds = ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds']
     for n in interactions:
         if n in bonds:
             for c_op in interactions[n]:
@@ -273,7 +179,7 @@ def initialize_mf_hamiltonian(plaquette, interactions, basis,
 def mf_params(mean_fields, interactions, plaquette):
     p_dict = {}
     for n in interactions:
-        if n in ['x_bonds', 'y_bonds', 'z_bonds']:
+        if n in ['x_bonds', 'y_bonds', 'z_bonds', 'n_bonds', 'nn_bonds']:
             for c_op in interactions[n]:
                 coupling = 1. + 0.j # this will be multiplied times the coupling in the original hamiltonian
                 for b in plaquette['outer'][n]:

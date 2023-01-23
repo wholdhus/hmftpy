@@ -31,7 +31,7 @@ def test_neighbors(plaquette):
 def test_bonds(plaquette, coordinations):
     good = True
     L = plaquette['L']
-    nearest_neighbors = [0 for i in range(L)]
+    nearest_neighbors = np.zeros(L)
     next_nearest_neighbors = np.zeros(L)
     for i in range(L):
         for b in plaquette['inner']['n_bonds']:
@@ -39,29 +39,29 @@ def test_bonds(plaquette, coordinations):
                 nearest_neighbors[i] += 1
         for b in plaquette['outer']['n_bonds']:
             if i in b:
-                nearest_neighbors[i] += 0.5 # because these are counted twice
+                nearest_neighbors[i] += 1
         for b in plaquette['inner']['nn_bonds']:
             if i in b:
                 next_nearest_neighbors[i] += 1
         for b in plaquette['outer']['nn_bonds']:
             if i in b:
-                next_nearest_neighbors[i] += 0.5
+                next_nearest_neighbors[i] += 1
     nearest_test = nearest_neighbors == coordinations[0]
     next_nearest_test = next_nearest_neighbors == coordinations[1]
-    return nearest_test, next_nearest_test
+    test = nearest_test.all() and next_nearest_test.all()
+    return test, nearest_neighbors, next_nearest_neighbors
 
-def plot_plaq(plaquette):
-    rs = plaquette['rs']
-    Rs = plaquette['Rs']
-    xs = rs[:,0]
-    ys = rs[:,1]
-    print(xs)
-    print(ys)
-    for j, R in enumerate(plaquette['Rs']):
-        if j == 0:
-            color='black'
-        else:
-            color='red'
-        for i in range(plaquette['L']):
-            plt.scatter([xs[i]+R[0]], [ys[i]+R[1]], color=color)
-            plt.text(xs[i]+R[0], ys[i]+R[1], str(i))
+def plot_plaq(plaq):
+    R1 = plaq['Rs'][0]
+    R2 = plaq['Rs'][1]
+    Rs = [np.zeros(2), R1, R2, -R1, -R2, R1-R2, -R1+R2, R1+R2, -R1-R2]
+    for R in Rs:
+        outline_rs = [plaq['rs'][o]+R for o in plaq['outline']]
+        plt.plot([r[0] for r in outline_rs],
+                 [r[1] for r in outline_rs], color='gray', zorder=0)
+        plt.fill([r[0] for r in outline_rs],
+                 [r[1] for r in outline_rs], color='lightgray', zorder=-1)
+        for i, r in enumerate(plaq['rs']):
+            ri = r + R
+            plt.scatter(ri[0], ri[1], color='black', marker='.')
+            plt.text(ri[0], ri[1], i, clip_on=True)

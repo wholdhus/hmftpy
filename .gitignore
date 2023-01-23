@@ -3,4 +3,5 @@ __pycache__/
 /hmftpy/__pychache__/
 /hmftpy/plaquettes/__pychache__/
 *.png
+*.pyc
 .DS_Store
