@@ -1,4 +1,4 @@
-# hmftpy: Hierarchical and cluster mean-field theory solver
+# hmftpy: Hierarchical mean-field theory implemented in Python
 Implements hierarchical mean-field theory, a cluster mean-field theory that systematically preserves
 and breaks symmetries of the Hamiltonian to understand the phase diagrams of strongly-correlated models.
 
